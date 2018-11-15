@@ -36,7 +36,7 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     while True:
         if start:
             r = client.get("https://network.satnogs.org/api/observations/?ground_station=%d"%ground_station)
-            start=False
+            start = False
         else:
             nextpage = r.links.get("next")
             r = client.get(nextpage["url"])
@@ -112,30 +112,8 @@ def efficiency(passes):
     dttot = tmax-tmin
     
     return dt.total_seconds(),dttot.total_seconds(), dt.total_seconds()/dttot.total_seconds()
-            
-if __name__ == "__main__":
-    # Settings
-    tlefile = "uhf.txt"
-    observer_longitude = "6.379"
-    observer_latitude = "53.834"
-    observer_elevation = 10
-    minimum_altitude = 10
-    ground_station = 40
-    tmin = datetime.now()
-    tmax = datetime.now()+timedelta(hours=24)
-    
-    # Read satellites
-    with open(tlefile, "r") as f:
-        lines = f.readlines()
-        satellites = [satellite(lines[i], lines[i+1], lines[i+2])
-                      for i in range(0, len(lines), 3)]
 
-    # Set observer
-    observer = ephem.Observer()
-    observer.lon = observer_longitude
-    observer.lat = observer_latitude
-    observer.elevation = observer_elevation
-
+def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
     # Loop over satellites
     passes = []
     passid = 0
@@ -203,14 +181,76 @@ if __name__ == "__main__":
             else:
                 keep_digging = False
 
+    return passes
+
+def get_groundstation_info(ground_station_id):
+    # Get first page
+    client = requests.session()
+
+    # Loop
+    start = True
+    found = False
+    while True:
+        if start:
+            r = client.get("https://network.satnogs.org/api/stations")
+            start = False
+        else:
+            nextpage = r.links.get("next")
+            try:
+                r = client.get(nextpage["url"])
+            except TypeError:
+                break
+
+        # Get info
+        for o in r.json():
+            if o['id'] == ground_station_id:
+                found = True
+                break
+
+        # Exit
+        if found:
+            break
+    if found:
+        return o
+    else:
+        return {}
+
+if __name__ == "__main__":
+    # Settings
+    ground_station_id = 39
+    tlefile = "vhf.txt"
+    length_hours = 2
+    
+    # Get ground station information
+    ground_station = get_groundstation_info(ground_station_id)
+
+    # Set observer
+    observer = ephem.Observer()
+    observer.lon = str(ground_station['lng'])
+    observer.lat = str(ground_station['lat'])
+    observer.elevation = ground_station['altitude']
+    minimum_altitude = ground_station['min_horizon']
+
+    tmin = datetime.utcnow()
+    tmax = datetime.utcnow()+timedelta(hours=length_hours)
+
+    # Read satellites
+    with open(tlefile, "r") as f:
+        lines = f.readlines()
+        satellites = [satellite(lines[i], lines[i+1], lines[i+2])
+                      for i in range(0, len(lines), 3)]
+
+
+    # Find passes
+    passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
+
     # Priorities
-#    priorities = {"40069": 1.000, "25338": 0.990, "28654": 0.990, "33591": 0.990, "43017": 0.980, "43137": 0.980, "40967": 0.980, "40074": 0.970, "42017": 0.970, "39444": 0.970, "40903": 0.960, "40906": 0.960, "40907": 0.960, "40909": 0.960, "40910": 0.960, "40911": 0.960, "42778": 0.950, "00965": 0.950, "42759": 0.940, "42761": 0.940, "25544": 0.000}
-    priorities = {"40043": 1.000, "40012": 1.000, "42768": 1.000, "40968": 1.000, "40014": 1.000, "40379": 1.000, "42789": 1.000, "27844": 0.900, "27848": 0.900, "35935": 0.900, "43589": 0.900, "43590": 0.900, "43591": 0.900, "41935": 1.000, "24278": 0.900, "43156": 0.900, "42775": 0.900, "43596": 0.800, "40377": 0.800, "40378": 0.800, "43156": 0.800, "43468": 0.800, "43552": 0.800, "43466": 0.800}
+    priorities = {"40069": 1.000, "25338": 0.990, "28654": 0.990, "33591": 0.990}
     
     # List of scheduled passes
     # scheduledpasses = []
-    scheduledpasses = get_scheduled_passes_from_network(ground_station, tmin, tmax)
-    print("Found %d scheduled passes between %s and %s on ground station %d\n"%(len(scheduledpasses), tmin, tmax, ground_station))
+    scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
+    print("Found %d scheduled passes between %s and %s on ground station %d\n"%(len(scheduledpasses), tmin, tmax, ground_station_id))
     
     # Get passes of priority objects
     prioritypasses = []
@@ -249,7 +289,7 @@ if __name__ == "__main__":
     ax.grid()
     ax.get_yaxis().set_visible(False)
     fig.autofmt_xdate(rotation=0, ha='center')
-    plt.xlabel("Time (UTC) for station #%d"%ground_station)
+    plt.xlabel("Time (UTC) for station #%d"%ground_station_id)
     
     # Get list of colors
     colors = [key for key in mcolors.BASE_COLORS.keys() if key!='w']
@@ -281,4 +321,4 @@ if __name__ == "__main__":
     # Print schedule commands
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         if satpass['scheduled']==False:
-            print("firefox \"https://network.satnogs.org/observations/new/?norad=%s&ground_station=%d&start_date=%s&end_date=%s\""%(satpass['id'], ground_station, (satpass['tr']-timedelta(minutes=1)).strftime("%Y/%m/%d%%20%H:%M"), (satpass['ts']+timedelta(minutes=1)).strftime("%Y/%m/%d%%20%H:%M")))
+            print("firefox \"https://network.satnogs.org/observations/new/?norad=%s&ground_station_id=%d&start_date=%s&end_date=%s\""%(satpass['id'], ground_station_id, (satpass['tr']-timedelta(minutes=1)).strftime("%Y/%m/%d%%20%H:%M"), (satpass['ts']+timedelta(minutes=1)).strftime("%Y/%m/%d%%20%H:%M")))
