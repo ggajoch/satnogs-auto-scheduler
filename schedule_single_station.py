@@ -34,7 +34,7 @@ class twolineelement:
 class satellite:
     """Satellite class"""
 
-    def __init__(self, tle, transmitter):
+    def __init__(self, tle, transmitter, success_rate, good_count, data_count):
         """Define a satellite"""
 
         self.tle0 = tle.tle0
@@ -43,6 +43,9 @@ class satellite:
         self.id = tle.id
         self.name = tle.name
         self.transmitter = transmitter
+        self.success_rate = success_rate
+        self.good_count = good_count
+        self.data_count = data_count
 
 def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     # Get first page
@@ -195,6 +198,9 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
                                'azs': azimuth_s,     # Set azimuth
                                'valid': valid,
                                'uuid': satellite.transmitter,
+                               'success_rate': satellite.success_rate,
+                               'good_count': satellite.good_count,
+                               'data_count': satellite.data_count,
                                'scheduled': False}
                     passes.append(satpass)
                 observer.date = ephem.Date(ts).datetime() + timedelta(minutes=1)
@@ -285,10 +291,24 @@ def schedule_observation(username, password, norad_cat_id, uuid, ground_station_
     form["0-station"] = ground_station_id
     form["total"] = str(1)
     session.post(obsURL, data=form, headers={'referer':obsURL})
+
+def get_transmitter_success_rate(norad, uuid):
+    transmitters = requests.get("https://network.satnogs.org/transmitters/"+str(norad)).json()["transmitters"]
+    success_rate = 0
+    good_count = 0
+    data_count = 0
+    for transmitter in transmitters:
+        if transmitter["uuid"]==uuid:
+            success_rate = transmitter["success_rate"]
+            good_count = transmitter["good_count"]
+            data_count = transmitter["data_count"]
+            break
+            
+    return success_rate, good_count, data_count
     
 if __name__ == "__main__":
     # Settings
-    ground_station_id = 40
+    ground_station_id = 39
     length_hours = 2
     data_age_hours = 24
     cache_dir = "/tmp/cache"
@@ -311,8 +331,17 @@ if __name__ == "__main__":
     # Get last update
     tlast = get_last_update(os.path.join(cache_dir, "last_update_%d.txt"%ground_station_id))
 
-    # Update
+    # Update logic
+    update = False
     if tlast==None or (tnow-tlast).total_seconds()>data_age_hours*3600:
+        update = True
+    if not os.path.isfile(os.path.join(cache_dir, "transmitters_%d.txt"%ground_station_id)):
+        update = True
+    if not os.path.isfile(os.path.join(cache_dir, "tles_%d.txt"%ground_station_id)):
+        update = True
+            
+    # Update
+    if update:
         # Store current time
         with open(os.path.join(cache_dir, "last_update_%d.txt"%ground_station_id), "w") as fp:
             fp.write(tnow.strftime("%Y-%m-%dT%H:%M:%S")+"\n")
@@ -326,7 +355,9 @@ if __name__ == "__main__":
         # Store transmitters
         fp = open(os.path.join(cache_dir, "transmitters_%d.txt"%ground_station_id), "w")
         for transmitter in transmitters:
-            fp.write("%05d %s\n"%(transmitter["norad_cat_id"], transmitter["uuid"]))
+            success_rate, good_count, data_count = get_transmitter_success_rate(
+                transmitter["norad_cat_id"], transmitter["uuid"])
+            fp.write("%05d %s %d %d %d\n"%(transmitter["norad_cat_id"], transmitter["uuid"], success_rate, good_count, data_count))
         fp.close()
                      
         # Get NORAD IDs
@@ -359,16 +390,18 @@ if __name__ == "__main__":
     with open(os.path.join(cache_dir, "transmitters_%d.txt"%ground_station_id), "r") as f:
         lines = f.readlines()
         for line in lines:
-            norad_cat_id, uuid = int(line.split()[0]), line.split()[1]
+            item = line.split()
+            norad_cat_id, uuid, success_rate, good_count, data_count = int(item[0]), item[1], float(item[2])/100.0, int(item[3]), int(item[4])
             for tle in tles:
                 if tle.id == norad_cat_id:
-                    satellites.append(satellite(tle, uuid))
+                    satellites.append(satellite(tle, uuid, success_rate, good_count, data_count))
 
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
 
     # Priorities
-    priorities = {"40069": 1.000, "25338": 0.990, "28654": 0.990, "33591": 0.990}
+#    priorities = {"40069": 1.000, "25338": 0.990, "28654": 0.990, "33591": 0.990}
+    priorities = {}
     
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
@@ -383,7 +416,7 @@ if __name__ == "__main__":
             satpass['priority'] = priorities[satpass['id']]
             prioritypasses.append(satpass)
         else:
-            satpass['priority'] = float(satpass['altt'])/90.0
+            satpass['priority'] = (float(satpass['altt'])/90.0)*satpass['success_rate']
             normalpasses.append(satpass)
             
     # Priority scheduler
@@ -436,7 +469,7 @@ if __name__ == "__main__":
 #    for satpass in scheduledpasses:
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         if satpass['scheduled']==False:
-            print("%s %s %3d %3d %3d %5.2f | %s %s %s"%(satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"), satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['azr']), float(satpass['altt']), float(satpass['azs']),satpass['priority'], satpass['uuid'], satpass['id'], satpass['name'].rstrip()))
+            print("%s %s %3d %3d %3d %5.2f %5.2f %d %d | %s %s %s"%(satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"), satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['azr']), float(satpass['altt']), float(satpass['azs']),satpass['priority'], satpass['success_rate'], satpass['good_count'], satpass['data_count'], satpass['uuid'], satpass['id'], satpass['name'].rstrip()))
         else:
             print("%s %s %3d %3d %3d %5.2f | %s %s %s"%(satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"), satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), 0.0, 0.0, 0.0, 0.0, "", satpass['id'], ""))
 
@@ -458,4 +491,5 @@ if __name__ == "__main__":
                                      ground_station_id,
                                      satpass['tr'].strftime("%Y-%m-%d %H:%M:%S")+".000",
                                      satpass['ts'].strftime("%Y-%m-%d %H:%M:%S")+".000")
+
 
