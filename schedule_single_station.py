@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function, division
 import json
 import requests
 import ephem
@@ -14,6 +15,7 @@ from satellite_tle import fetch_tles
 import os
 import glob
 import lxml.html
+import argparse
 
 class twolineelement:
     """TLE class"""
@@ -28,7 +30,10 @@ class twolineelement:
             self.name = tle0[2:]
         else:
             self.name = tle0
-        self.id = int(tle1.split(" ")[1][:5])
+            if tle1.split(" ")[1]=="":
+                self.id = int(tle1.split(" ")[2][:4])
+            else:
+                self.id = int(tle1.split(" ")[1][:5])
 
 
 class satellite:
@@ -307,17 +312,28 @@ def get_transmitter_success_rate(norad, uuid):
     return success_rate, good_count, data_count
     
 if __name__ == "__main__":
+    # Parse arguments
+    parser = argparse.ArgumentParser(description="Automatically schedule observations on a SatNOGS station.")
+    parser.add_argument("-s", "--station", help="Ground station ID", type=int)
+    parser.add_argument("-t", "--starttime", help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
+                        default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
+    parser.add_argument("-d", "--duration", help="Duration to schedule [hours]", type=int, default=1)
+    parser.add_argument("-u", "--username", help="SatNOGS username")
+    parser.add_argument("-p", "--password", help="SatNOGS password")
+    parser.add_argument("-n", "--dryrun", help="Dry run (do not schedule passes)", action="store_true")
+    args = parser.parse_args()
+    
     # Settings
-    ground_station_id = 39
-    length_hours = 2
+    ground_station_id = args.station
+    length_hours = args.duration
     data_age_hours = 24
     cache_dir = "/tmp/cache"
-    username = ""
-    password = ""
-    schedule = False
+    username = args.username
+    password = args.password
+    schedule = not args.dryrun
 
     # Set time range
-    tnow = datetime.utcnow()
+    tnow = datetime.strptime(args.starttime, "%Y-%m-%dT%H:%M:%S")
     tmin = tnow
     tmax = tnow+timedelta(hours=length_hours)
 
@@ -433,56 +449,13 @@ if __name__ == "__main__":
     # Find unique objects
     satids = sorted(set([satpass['id'] for satpass in passes]))
 
-    # Set up figure
-    fig = plt.figure(figsize=(20,len(satids)*0.2))
-    ax = fig.add_subplot(111)
-    ax.set_xlim(tmin, tmax)
-    ax.set_ylim(-3,len(satids)+1)
-    ax.xaxis.set_major_locator(HourLocator(xrange(0, 25, 3)))
-    ax.xaxis.set_minor_locator(HourLocator(xrange(0, 25, 1)))
-    ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d %H:%M:%S'))
-    ax.grid()
-    ax.get_yaxis().set_visible(False)
-    fig.autofmt_xdate(rotation=0, ha='center')
-    plt.xlabel("Time (UTC) for station #%d"%ground_station_id)
-    
-    # Get list of colors
-    colors = [key for key in mcolors.BASE_COLORS.keys() if key!='w']
-
-    # Loop over objects
-    for i, satid in enumerate(satids):
-        plt.text(tmax+timedelta(minutes=5), i-0.25, satid, color=colors[i%len(colors)])
-        for satpass in passes:
-            if satpass['id']==satid:
-                width = satpass['ts']-satpass['tr']
-                ax.add_patch(Rectangle((satpass['tr'], i-0.4), width, 0.8, color=colors[i%len(colors)]))
-                # Plot scheduled passes
-                if satpass in scheduledpasses:
-                    ax.add_patch(Rectangle((satpass['tr'], -2.4), width, 0.8, color=colors[i%len(colors)]))
-
-    # Time axis setter
-    plt.savefig("schedule.png")
-
-
-#    print("%d passes scheduled out of %d, %.0f s out of %.0f s at %.3f%% efficiency"%(len(scheduledpasses), len(passes), dt, dttot, 100*eff))
-
-#    for satpass in scheduledpasses:
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         if satpass['scheduled']==False:
-            print("%s %s %3d %3d %3d %5.2f %5.2f %d %d | %s %s %s"%(satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"), satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['azr']), float(satpass['altt']), float(satpass['azs']),satpass['priority'], satpass['success_rate'], satpass['good_count'], satpass['data_count'], satpass['uuid'], satpass['id'], satpass['name'].rstrip()))
-        else:
-            print("%s %s %3d %3d %3d %5.2f | %s %s %s"%(satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"), satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), 0.0, 0.0, 0.0, 0.0, "", satpass['id'], ""))
+            print("%05d %s %s %3.0f %4.3f %s %s"%(int(satpass['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"), satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['altt']), satpass['priority'], satpass['uuid'], satpass['name'].rstrip()))
 
     # Schedule passes
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         if satpass['scheduled']==False:
-            print(username,
-                  password,
-                  int(satpass['id']),
-                  satpass['uuid'],
-                  ground_station_id,
-                  satpass['tr'].strftime("%Y-%m-%d %H:%M:%S")+".000",
-                  satpass['ts'].strftime("%Y-%m-%d %H:%M:%S")+".000")
             if schedule:
                 schedule_observation(username,
                                      password,
