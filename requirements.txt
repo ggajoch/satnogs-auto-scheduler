@@ -1,5 +1,4 @@
 ephem
 satellitetle
 requests
-matplotlib
 lxml
