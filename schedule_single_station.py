@@ -6,10 +6,6 @@ import ephem
 import math
 import random
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-from matplotlib.dates import DayLocator, HourLocator, DateFormatter, drange
-from matplotlib import colors as mcolors
 import itertools
 from satellite_tle import fetch_tles
 import os
