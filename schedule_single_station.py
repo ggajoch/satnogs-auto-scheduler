@@ -6,7 +6,6 @@ import ephem
 import math
 import random
 from datetime import datetime, timedelta
-import itertools
 from satellite_tle import fetch_tles
 import os
 import glob
@@ -423,11 +422,10 @@ if __name__ == "__main__":
         # Get active transmitters in frequency range of each antenna
         transmitters = []
         for antenna in ground_station['antenna']:
-            transmitters.append(
+            transmitters.extend(
                 get_active_transmitter_info(
                     antenna["frequency"],
                     antenna["frequency_max"]))
-            transmitters = list(itertools.chain.from_iterable(transmitters))
 
         # Store transmitters
         fp = open(
