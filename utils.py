@@ -2,6 +2,7 @@ import requests
 import logging
 
 DB_BASE_URL = 'https://db.satnogs.org/api'
+NETWORK_BASE_URL = 'https://network.satnogs.org/api'
 
 
 def get_active_transmitter_info(fmin, fmax):
@@ -20,3 +21,9 @@ def get_active_transmitter_info(fmin, fmax):
                 transmitters.append(transmitter)
     logging.info("Transmitters filtered based on ground station capability.")
     return transmitters
+
+
+def get_transmitter_stats():
+    logging.debug("Requesting transmitter success rates for all satellite")
+    transmitters = requests.get('{}/transmitters/'.format(NETWORK_BASE_URL))
+    return transmitters.json()

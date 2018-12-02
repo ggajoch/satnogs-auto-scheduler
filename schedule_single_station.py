@@ -12,11 +12,13 @@ import glob
 import lxml.html
 import argparse
 import logging
-from utils import get_active_transmitter_info, DB_BASE_URL
+from utils import get_active_transmitter_info, \
+                  get_transmitter_stats, \
+                  DB_BASE_URL, \
+                  NETWORK_BASE_URL
 
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
-NETWORK_BASE_URL = 'https://network.satnogs.org/api'
 
 class twolineelement:
     """TLE class"""
@@ -296,26 +298,6 @@ def schedule_observation(
     session.post(obsURL, data=form, headers={'referer': obsURL})
 
 
-def get_transmitter_success_rate(norad, uuid):
-    logging.debug("Requesting transmitter success rates for satellite %d" % norad)
-    transmitters = requests.get(
-        "https://network.satnogs.org/transmitters/" +
-        str(norad)).json()["transmitters"]
-    success_rate = 0
-    good_count = 0
-    data_count = 0
-    for transmitter in transmitters:
-        logging.debug("Fetching transmitter %s success rates" % transmitter["uuid"])
-        if transmitter["uuid"] == uuid:
-            success_rate = transmitter["success_rate"]
-            good_count = transmitter["good_count"]
-            data_count = transmitter["data_count"]
-            break
-
-    logging.debug("Transmitter success rates for satellite %d received!" % norad)
-    return success_rate, good_count, data_count
-
-
 def _log_level_string_to_int(log_level_string):
     if log_level_string not in _LOG_LEVEL_STRINGS:
         message = 'invalid choice: {0} (choose from {1})'.format(log_level_string,
@@ -420,12 +402,15 @@ if __name__ == "__main__":
             fp.write(tnow.strftime("%Y-%m-%dT%H:%M:%S") + "\n")
 
         # Get active transmitters in frequency range of each antenna
-        transmitters = []
+        transmitters = {}
         for antenna in ground_station['antenna']:
-            transmitters.extend(
-                get_active_transmitter_info(
-                    antenna["frequency"],
-                    antenna["frequency_max"]))
+            for transmitter in get_active_transmitter_info(antenna["frequency"],
+                                                           antenna["frequency_max"]):
+                transmitters[transmitter['uuid']] = transmitter
+
+        # Get NORAD IDs
+        norad_cat_ids = sorted(
+            set([transmitter["norad_cat_id"] for transmitter in transmitters.values()]))
 
         # Store transmitters
         fp = open(
@@ -435,22 +420,21 @@ if __name__ == "__main__":
                 ground_station_id),
             "w")
         logging.info("Requesting transmitter success rates.")
-        for transmitter in transmitters:
-            success_rate, good_count, data_count = get_transmitter_success_rate(
-                transmitter["norad_cat_id"], transmitter["uuid"])
+        transmitters_stats = get_transmitter_stats()
+        for transmitter in transmitters_stats:
+            if not transmitter['uuid'] in transmitters.keys():
+                pass
+
             fp.write(
                 "%05d %s %d %d %d\n" %
                 (transmitter["norad_cat_id"],
                  transmitter["uuid"],
-                 success_rate,
-                 good_count,
-                 data_count))
+                 transmitter["success_rate"],
+                 transmitter["good_count"],
+                 transmitter["data_count"]))
+
         logging.info("Transmitter success rates received!")
         fp.close()
-
-        # Get NORAD IDs
-        norad_cat_ids = sorted(
-            set([transmitter["norad_cat_id"] for transmitter in transmitters]))
 
         # Get TLEs
         tles = fetch_tles(norad_cat_ids)
