@@ -1,2 +1,2 @@
-DB_BASE_URL = 'https://db.satnogs.org/api'
-NETWORK_BASE_URL = 'https://network.satnogs.org/api'
+DB_BASE_URL = 'https://db.satnogs.org'
+NETWORK_BASE_URL = 'https://network.satnogs.org'

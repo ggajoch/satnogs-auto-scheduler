@@ -11,7 +11,7 @@ import settings
 def get_active_transmitter_info(fmin, fmax):
     # Open session
     logging.info("Fetching transmitter information from DB.")
-    r = requests.get('{}/transmitters'.format(settings.DB_BASE_URL))
+    r = requests.get('{}/api/transmitters'.format(settings.DB_BASE_URL))
     logging.info("Transmitters received!")
 
     # Loop
@@ -28,7 +28,7 @@ def get_active_transmitter_info(fmin, fmax):
 
 def get_transmitter_stats():
     logging.debug("Requesting transmitter success rates for all satellite")
-    transmitters = requests.get('{}/transmitters/'.format(settings.NETWORK_BASE_URL))
+    transmitters = requests.get('{}/api/transmitters/'.format(settings.NETWORK_BASE_URL))
     return transmitters.json()
 
 
@@ -43,7 +43,7 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     logging.info("Requesting scheduled passes for ground station %d" % ground_station)
     while True:
         if start:
-            r = client.get('{}/observations/?ground_station={:d}'.format(
+            r = client.get('{}/api/observations/?ground_station={:d}'.format(
                            settings.NETWORK_BASE_URL,
                            ground_station))
             start = False
@@ -224,7 +224,7 @@ def get_groundstation_info(ground_station_id):
 
     # Loop
     found = False
-    r = client.get("{}/stations/?id={:d}".format(
+    r = client.get("{}/api/stations/?id={:d}".format(
                    settings.NETWORK_BASE_URL,
                    ground_station_id))
     for o in r.json():
