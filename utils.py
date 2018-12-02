@@ -8,6 +8,23 @@ import lxml
 import settings
 
 
+def get_paginated_endpoint(url, max_entries=None):
+    r = requests.get(url=url)
+    r.raise_for_status()
+
+    data = r.json()
+
+    while 'next' in r.links and (not max_entries or len(data) < max_entries):
+        next_page_url = r.links['next']['url']
+
+        r = requests.get(url=next_page_url)
+        r.raise_for_status()
+
+        data.extend(r.json())
+
+    return data
+
+
 def get_active_transmitter_info(fmin, fmax):
     # Open session
     logging.info("Fetching transmitter information from DB.")
@@ -28,8 +45,8 @@ def get_active_transmitter_info(fmin, fmax):
 
 def get_transmitter_stats():
     logging.debug("Requesting transmitter success rates for all satellite")
-    transmitters = requests.get('{}/api/transmitters/'.format(settings.NETWORK_BASE_URL))
-    return transmitters.json()
+    transmitters = get_paginated_endpoint('{}/api/transmitters/'.format(settings.NETWORK_BASE_URL))
+    return transmitters
 
 
 def get_scheduled_passes_from_network(ground_station, tmin, tmax):
