@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function, division
+from __future__ import division
 import json
 import requests
 import ephem
@@ -12,6 +12,9 @@ import os
 import glob
 import lxml.html
 import argparse
+import logging
+
+_LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
 
 class twolineelement:
@@ -58,7 +61,7 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     start = True
     scheduledpasses = []
 
-    print("Requesting information for scheduled passes on ground station %d" % ground_station)
+    logging.info("Requesting scheduled passes for ground station %d" % ground_station)
     while True:
         if start:
             r = client.get(
@@ -90,7 +93,7 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
         if satpass['ts'] < tmin:
             break
 
-    print("Scheduled passes for ground station %d retrieved!" % ground_station)
+    logging.info("Scheduled passes for ground station %d retrieved!" % ground_station)
     return scheduledpasses
 
 
@@ -236,38 +239,41 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
 
 
 def get_groundstation_info(ground_station_id):
-    # Get first page
+
+    logging.info("Requesting information for ground station %d" % ground_station_id)
     client = requests.session()
 
     # Loop
     found = False
-    print("Requesting information for ground station %d" % ground_station_id)
     r = client.get("https://network.satnogs.org/api/stations/?id=%d" % ground_station_id)
     for o in r.json():
         if o['id'] == ground_station_id:
             found = True
             break
     if found:
-        print('Ground station infromation retrieved!')
+        logging.info('Ground station infromation retrieved!')
         return o
     else:
-        print('No ground station information found!')
+        logging.info('No ground station information found!')
         return {}
 
 
 def get_active_transmitter_info(fmin, fmax):
     # Open session
+    logging.info("Fetching transmitter information from DB.")
     client = requests.session()
     r = client.get("https://db.satnogs.org/api/transmitters")
+    logging.info("Transmitters received!")
 
     # Loop
     transmitters = []
     for o in r.json():
-        if o["alive"] and o["downlink_low"] > fmin and o["downlink_low"] <= fmax:
-            transmitter = {"norad_cat_id": o["norad_cat_id"],
-                           "uuid": o["uuid"]}
-            transmitters.append(transmitter)
-
+        if o["downlink_low"]:
+            if o["alive"] and o["downlink_low"] > fmin and o["downlink_low"] <= fmax:
+                transmitter = {"norad_cat_id": o["norad_cat_id"],
+                               "uuid": o["uuid"]}
+                transmitters.append(transmitter)
+    logging.info("Transmitters filtered based on ground station capability.")
     return transmitters
 
 
@@ -282,23 +288,12 @@ def get_last_update(fname):
 
 
 def schedule_observation(
-        username,
-        password,
+        session,
         norad_cat_id,
         uuid,
         ground_station_id,
         starttime,
         endtime):
-    loginUrl = "https://network.satnogs.org/accounts/login/"  # login URL
-    session = requests.session()
-    login = session.get(loginUrl)  # Get login page for CSFR token
-    login_html = lxml.html.fromstring(login.text)
-    login_hidden_inputs = login_html.xpath(
-        r'//form//input[@type="hidden"]')  # Get CSFR token
-    form = {x.attrib["name"]: x.attrib["value"] for x in login_hidden_inputs}
-    form["login"] = username
-    form["password"] = password
-    session.post(loginUrl, data=form, headers={'referer': loginUrl})  # Login
 
     obsURL = "https://network.satnogs.org/observations/new/"  # Observation URL
     # Get the observation/new/ page to get the CSFR token
@@ -318,6 +313,7 @@ def schedule_observation(
 
 
 def get_transmitter_success_rate(norad, uuid):
+    logging.debug("Requesting transmitter success rates for satellite %d" % norad)
     transmitters = requests.get(
         "https://network.satnogs.org/transmitters/" +
         str(norad)).json()["transmitters"]
@@ -325,13 +321,28 @@ def get_transmitter_success_rate(norad, uuid):
     good_count = 0
     data_count = 0
     for transmitter in transmitters:
+        logging.debug("Fetching transmitter %s success rates" % transmitter["uuid"])
         if transmitter["uuid"] == uuid:
             success_rate = transmitter["success_rate"]
             good_count = transmitter["good_count"]
             data_count = transmitter["data_count"]
             break
 
+    logging.debug("Transmitter success rates for satellite %d received!" % norad)
     return success_rate, good_count, data_count
+
+
+def _log_level_string_to_int(log_level_string):
+    if log_level_string not in _LOG_LEVEL_STRINGS:
+        message = 'invalid choice: {0} (choose from {1})'.format(log_level_string,
+                                                                 _LOG_LEVEL_STRINGS)
+        raise argparse.ArgumentTypeError(message)
+
+    log_level_int = getattr(logging, log_level_string, logging.INFO)
+    # check the logging log_level_choices have not changed from our expected values
+    assert isinstance(log_level_int, int)
+
+    return log_level_int
 
 
 if __name__ == "__main__":
@@ -357,7 +368,20 @@ if __name__ == "__main__":
         "--dryrun",
         help="Dry run (do not schedule passes)",
         action="store_true")
+    parser.add_argument("-l", "--log-level",
+                        default="INFO",
+                        dest="log_level",
+                        type=_log_level_string_to_int,
+                        nargs="?",
+                        help="Set the logging output level. {0}".format(_LOG_LEVEL_STRINGS))
     args = parser.parse_args()
+
+    # Setting logging level
+    numeric_level = args.log_level
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % loglevel)
+    logging.basicConfig(level=numeric_level,
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     # Settings
     ground_station_id = args.station
@@ -406,6 +430,7 @@ if __name__ == "__main__":
 
     # Update
     if update:
+        logging.info('Updating transmitters and TLEs for station')
         # Store current time
         with open(os.path.join(cache_dir, "last_update_%d.txt" % ground_station_id), "w") as fp:
             fp.write(tnow.strftime("%Y-%m-%dT%H:%M:%S") + "\n")
@@ -426,6 +451,7 @@ if __name__ == "__main__":
                 "transmitters_%d.txt" %
                 ground_station_id),
             "w")
+        logging.info("Requesting transmitter success rates.")
         for transmitter in transmitters:
             success_rate, good_count, data_count = get_transmitter_success_rate(
                 transmitter["norad_cat_id"], transmitter["uuid"])
@@ -436,6 +462,7 @@ if __name__ == "__main__":
                  success_rate,
                  good_count,
                  data_count))
+        logging.info("Transmitter success rates received!")
         fp.close()
 
         # Get NORAD IDs
@@ -497,7 +524,7 @@ if __name__ == "__main__":
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(
         ground_station_id, tmin, tmax)
-    print(
+    logging.info(
         "Found %d scheduled passes between %s and %s on ground station %d\n" %
         (len(scheduledpasses), tmin, tmax, ground_station_id))
 
@@ -529,7 +556,7 @@ if __name__ == "__main__":
     scheduledpasses = ordered_scheduler(normalpasses, scheduledpasses)
 
     dt, dttot, eff = efficiency(scheduledpasses)
-    print(
+    logging.info(
         "%d passes scheduled out of %d, %.0f s out of %.0f s at %.3f%% efficiency" %
         (len(scheduledpasses), len(passes), dt, dttot, 100 * eff))
 
@@ -538,7 +565,7 @@ if __name__ == "__main__":
 
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         if not satpass['scheduled']:
-            print(
+            logging.info(
                 "%05d %s %s %3.0f %4.3f %s %s" %
                 (int(
                     satpass['id']),
@@ -550,12 +577,23 @@ if __name__ == "__main__":
                     satpass['uuid'],
                     satpass['name'].rstrip()))
 
+    # Login
+    loginUrl = "https://network.satnogs.org/accounts/login/"  # login URL
+    session = requests.session()
+    login = session.get(loginUrl)  # Get login page for CSFR token
+    login_html = lxml.html.fromstring(login.text)
+    login_hidden_inputs = login_html.xpath(
+        r'//form//input[@type="hidden"]')  # Get CSFR token
+    form = {x.attrib["name"]: x.attrib["value"] for x in login_hidden_inputs}
+    form["login"] = username
+    form["password"] = password
+    session.post(loginUrl, data=form, headers={'referer': loginUrl})  # Login
+
     # Schedule passes
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         if not satpass['scheduled']:
             if schedule:
-                schedule_observation(username,
-                                     password,
+                schedule_observation(session,
                                      int(satpass['id']),
                                      satpass['uuid'],
                                      ground_station_id,
