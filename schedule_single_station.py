@@ -13,10 +13,11 @@ import glob
 import lxml.html
 import argparse
 import logging
+from utils import get_active_transmitter_info, DB_BASE_URL
+
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 NETWORK_BASE_URL = 'https://network.satnogs.org/api'
-DB_BASE_URL = 'https://db.satnogs.org/api'
 
 class twolineelement:
     """TLE class"""
@@ -259,25 +260,6 @@ def get_groundstation_info(ground_station_id):
     else:
         logging.info('No ground station information found!')
         return {}
-
-
-def get_active_transmitter_info(fmin, fmax):
-    # Open session
-    logging.info("Fetching transmitter information from DB.")
-    client = requests.session()
-    r = client.get('{}/transmitters'.format(DB_BASE_URL))
-    logging.info("Transmitters received!")
-
-    # Loop
-    transmitters = []
-    for o in r.json():
-        if o["downlink_low"]:
-            if o["alive"] and o["downlink_low"] > fmin and o["downlink_low"] <= fmax:
-                transmitter = {"norad_cat_id": o["norad_cat_id"],
-                               "uuid": o["uuid"]}
-                transmitters.append(transmitter)
-    logging.info("Transmitters filtered based on ground station capability.")
-    return transmitters
 
 
 def get_last_update(fname):
