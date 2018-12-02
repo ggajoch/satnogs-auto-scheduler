@@ -45,12 +45,14 @@ class satellite:
         self.tle1 = tle.tle1
         self.tle2 = tle.tle2
         self.id = tle.id
-        self.name = tle.name
+        self.name = tle.name.strip()
         self.transmitter = transmitter
         self.success_rate = success_rate
         self.good_count = good_count
         self.data_count = data_count
 
+    def __repr__(self):
+        return "%s %s %d %d %d %s" % (self.id, self.transmitter, self.success_rate, self.good_count, self.data_count, self.name)
 
 def _log_level_string_to_int(log_level_string):
     if log_level_string not in _LOG_LEVEL_STRINGS:
@@ -217,7 +219,7 @@ if __name__ == "__main__":
         tles = [twolineelement(lines[i], lines[i + 1], lines[i + 2])
                 for i in range(0, len(lines), 3)]
 
-        # Read transmitters
+    # Read transmitters
     satellites = []
     with open(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id), "r") as f:
         lines = f.readlines()
@@ -234,12 +236,11 @@ if __name__ == "__main__":
                             success_rate,
                             good_count,
                             data_count))
-
+                    
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
 
     # Priorities
-#    priorities = {"40069": 1.000, "25338": 0.990, "28654": 0.990, "33591": 0.990}
     priorities = {}
 
     # List of scheduled passes
