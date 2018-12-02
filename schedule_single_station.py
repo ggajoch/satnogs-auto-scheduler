@@ -15,7 +15,8 @@ import argparse
 import logging
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
-
+NETWORK_BASE_URL = 'https://network.satnogs.org/api'
+DB_BASE_URL = 'https://db.satnogs.org/api'
 
 class twolineelement:
     """TLE class"""
@@ -64,9 +65,9 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     logging.info("Requesting scheduled passes for ground station %d" % ground_station)
     while True:
         if start:
-            r = client.get(
-                "https://network.satnogs.org/api/observations/?ground_station=%d" %
-                ground_station)
+            r = client.get('{}/observations/?ground_station={:d}'.format(
+                           NETWORK_BASE_URL,
+                           ground_station))
             start = False
         else:
             nextpage = r.links.get("next")
@@ -245,7 +246,9 @@ def get_groundstation_info(ground_station_id):
 
     # Loop
     found = False
-    r = client.get("https://network.satnogs.org/api/stations/?id=%d" % ground_station_id)
+    r = client.get("{}/stations/?id={:d}".format(
+                   NETWORK_BASE_URL,
+                   ground_station_id))
     for o in r.json():
         if o['id'] == ground_station_id:
             found = True
@@ -262,7 +265,7 @@ def get_active_transmitter_info(fmin, fmax):
     # Open session
     logging.info("Fetching transmitter information from DB.")
     client = requests.session()
-    r = client.get("https://db.satnogs.org/api/transmitters")
+    r = client.get('{}/transmitters'.format(DB_BASE_URL))
     logging.info("Transmitters received!")
 
     # Loop
