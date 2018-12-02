@@ -58,6 +58,7 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     start = True
     scheduledpasses = []
 
+    print("Requesting information for scheduled passes on ground station %d" % ground_station)
     while True:
         if start:
             r = client.get(
@@ -89,6 +90,7 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
         if satpass['ts'] < tmin:
             break
 
+    print("Scheduled passes for ground station %d retrieved!" % ground_station)
     return scheduledpasses
 
 
@@ -238,31 +240,18 @@ def get_groundstation_info(ground_station_id):
     client = requests.session()
 
     # Loop
-    start = True
     found = False
-    while True:
-        if start:
-            r = client.get("https://network.satnogs.org/api/stations")
-            start = False
-        else:
-            nextpage = r.links.get("next")
-            try:
-                r = client.get(nextpage["url"])
-            except TypeError:
-                break
-
-        # Get info
-        for o in r.json():
-            if o['id'] == ground_station_id:
-                found = True
-                break
-
-        # Exit
-        if found:
+    print("Requesting information for ground station %d" % ground_station_id)
+    r = client.get("https://network.satnogs.org/api/stations/?id=%d" % ground_station_id)
+    for o in r.json():
+        if o['id'] == ground_station_id:
+            found = True
             break
     if found:
+        print('Ground station infromation retrieved!')
         return o
     else:
+        print('No ground station information found!')
         return {}
 
 
