@@ -179,7 +179,7 @@ if __name__ == "__main__":
         transmitters_stats = get_transmitter_stats()
         for transmitter in transmitters_stats:
             if not transmitter['uuid'] in transmitters.keys():
-                pass
+                continue
 
             fp.write(
                 "%05d %s %d %d %d\n" %
