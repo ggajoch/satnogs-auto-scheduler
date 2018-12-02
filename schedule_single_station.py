@@ -288,23 +288,12 @@ def get_last_update(fname):
 
 
 def schedule_observation(
-        username,
-        password,
+        session,
         norad_cat_id,
         uuid,
         ground_station_id,
         starttime,
         endtime):
-    loginUrl = "https://network.satnogs.org/accounts/login/"  # login URL
-    session = requests.session()
-    login = session.get(loginUrl)  # Get login page for CSFR token
-    login_html = lxml.html.fromstring(login.text)
-    login_hidden_inputs = login_html.xpath(
-        r'//form//input[@type="hidden"]')  # Get CSFR token
-    form = {x.attrib["name"]: x.attrib["value"] for x in login_hidden_inputs}
-    form["login"] = username
-    form["password"] = password
-    session.post(loginUrl, data=form, headers={'referer': loginUrl})  # Login
 
     obsURL = "https://network.satnogs.org/observations/new/"  # Observation URL
     # Get the observation/new/ page to get the CSFR token
@@ -588,12 +577,23 @@ if __name__ == "__main__":
                     satpass['uuid'],
                     satpass['name'].rstrip()))
 
+    # Login
+    loginUrl = "https://network.satnogs.org/accounts/login/"  # login URL
+    session = requests.session()
+    login = session.get(loginUrl)  # Get login page for CSFR token
+    login_html = lxml.html.fromstring(login.text)
+    login_hidden_inputs = login_html.xpath(
+        r'//form//input[@type="hidden"]')  # Get CSFR token
+    form = {x.attrib["name"]: x.attrib["value"] for x in login_hidden_inputs}
+    form["login"] = username
+    form["password"] = password
+    session.post(loginUrl, data=form, headers={'referer': loginUrl})  # Login
+
     # Schedule passes
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         if not satpass['scheduled']:
             if schedule:
-                schedule_observation(username,
-                                     password,
+                schedule_observation(session,
                                      int(satpass['id']),
                                      satpass['uuid'],
                                      ground_station_id,
