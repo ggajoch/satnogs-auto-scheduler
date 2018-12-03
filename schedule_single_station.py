@@ -52,7 +52,9 @@ class satellite:
         self.data_count = data_count
 
     def __repr__(self):
-        return "%s %s %d %d %d %s" % (self.id, self.transmitter, self.success_rate, self.good_count, self.data_count, self.name)
+        return "%s %s %d %d %d %s" % (self.id, self.transmitter, self.success_rate,
+                                      self.good_count, self.data_count, self.name)
+
 
 def _log_level_string_to_int(log_level_string):
     if log_level_string not in _LOG_LEVEL_STRINGS:
@@ -108,7 +110,6 @@ if __name__ == "__main__":
     # Settings
     ground_station_id = args.station
     length_hours = args.duration
-    data_age_hours = 24
     cache_dir = "/tmp/cache"
     username = args.username
     password = args.password
@@ -135,7 +136,7 @@ if __name__ == "__main__":
 
     # Update logic
     update = False
-    if tlast is None or (tnow - tlast).total_seconds() > data_age_hours * 3600:
+    if tlast is None or (tnow - tlast).total_seconds() > settings.CACHE_AGE * 3600:
         update = True
     if not os.path.isfile(
         os.path.join(
@@ -236,7 +237,7 @@ if __name__ == "__main__":
                             success_rate,
                             good_count,
                             data_count))
-                    
+
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
 
@@ -285,8 +286,11 @@ if __name__ == "__main__":
     # Find unique objects
     satids = sorted(set([satpass['id'] for satpass in passes]))
 
+    schedule_needed = False
+
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         if not satpass['scheduled']:
+            schedule_needed = True
             logging.info(
                 "%05d %s %s %3.0f %4.3f %s %s" %
                 (int(
@@ -299,22 +303,21 @@ if __name__ == "__main__":
                     satpass['uuid'],
                     satpass['name'].rstrip()))
 
-    # Login
-    loginUrl = '{}/accounts/login/'.format(settings.NETWORK_BASE_URL)  # login URL
-    session = requests.session()
-    login = session.get(loginUrl)  # Get login page for CSFR token
-    login_html = lxml.html.fromstring(login.text)
-    login_hidden_inputs = login_html.xpath(
-        r'//form//input[@type="hidden"]')  # Get CSFR token
-    form = {x.attrib["name"]: x.attrib["value"] for x in login_hidden_inputs}
-    form["login"] = username
-    form["password"] = password
-    session.post(loginUrl, data=form, headers={'referer': loginUrl})  # Login
+    # Login and schedule passes
+    if schedule and schedule_needed:
+        loginUrl = '{}/accounts/login/'.format(settings.NETWORK_BASE_URL)  # login URL
+        session = requests.session()
+        login = session.get(loginUrl)  # Get login page for CSFR token
+        login_html = lxml.html.fromstring(login.text)
+        login_hidden_inputs = login_html.xpath(
+            r'//form//input[@type="hidden"]')  # Get CSFR token
+        form = {x.attrib["name"]: x.attrib["value"] for x in login_hidden_inputs}
+        form["login"] = username
+        form["password"] = password
+        session.post(loginUrl, data=form, headers={'referer': loginUrl})  # Login
 
-    # Schedule passes
-    for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
-        if not satpass['scheduled']:
-            if schedule:
+        for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
+            if not satpass['scheduled']:
                 schedule_observation(session,
                                      int(satpass['id']),
                                      satpass['uuid'],
