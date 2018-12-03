@@ -110,7 +110,6 @@ if __name__ == "__main__":
     # Settings
     ground_station_id = args.station
     length_hours = args.duration
-    data_age_hours = 24
     cache_dir = "/tmp/cache"
     username = args.username
     password = args.password
@@ -137,7 +136,7 @@ if __name__ == "__main__":
 
     # Update logic
     update = False
-    if tlast is None or (tnow - tlast).total_seconds() > data_age_hours * 3600:
+    if tlast is None or (tnow - tlast).total_seconds() > settings.CACHE_AGE * 3600:
         update = True
     if not os.path.isfile(
         os.path.join(
