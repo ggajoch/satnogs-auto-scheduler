@@ -270,6 +270,8 @@ if __name__ == "__main__":
         key=lambda satpass: -
         satpass['priority'])
     scheduledpasses = ordered_scheduler(prioritypasses, scheduledpasses)
+    for satpass in passes:
+        logging.debug(satpass)
 
     # Random scheduler
     normalpasses = sorted(
@@ -318,9 +320,22 @@ if __name__ == "__main__":
 
         for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
             if not satpass['scheduled']:
+                logging.debug(
+                    "Scheduling %05d %s %s %3.0f %4.3f %s %s" %
+                    (int(
+                        satpass['id']),
+                        satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
+                        satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
+                        float(
+                        satpass['altt']),
+                        satpass['priority'],
+                        satpass['uuid'],
+                        satpass['name'].rstrip()))
                 schedule_observation(session,
                                      int(satpass['id']),
                                      satpass['uuid'],
                                      ground_station_id,
                                      satpass['tr'].strftime("%Y-%m-%d %H:%M:%S") + ".000",
                                      satpass['ts'].strftime("%Y-%m-%d %H:%M:%S") + ".000")
+
+        logging.info("Scheduled all passes. Exiting!")
