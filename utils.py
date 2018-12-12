@@ -289,3 +289,4 @@ def schedule_observation(
     form["0-station"] = ground_station_id
     form["total"] = str(1)
     session.post(obsURL, data=form, headers={'referer': obsURL})
+    logging.debug("Scheduled!")
