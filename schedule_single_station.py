@@ -167,7 +167,8 @@ if __name__ == "__main__":
 
         # Get NORAD IDs
         norad_cat_ids = sorted(
-            set([transmitter["norad_cat_id"] for transmitter in transmitters.values()]))
+            set([transmitter["norad_cat_id"] for transmitter in transmitters.values()
+                 if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID ]))
 
         # Store transmitters
         fp = open(
