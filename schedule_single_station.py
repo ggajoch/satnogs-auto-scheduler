@@ -261,8 +261,10 @@ if __name__ == "__main__":
             satpass['priority'] = priorities[satpass['id']]
             prioritypasses.append(satpass)
         else:
+            # Find satellite transmitter with highest number of good observations
+            max_good_count = max([s['good_count'] for s in passes if s["id"] == satpass["id"]])
             satpass['priority'] = (
-                float(satpass['altt']) / 90.0) * satpass['success_rate']
+                float(satpass['altt']) / 90.0) * satpass['success_rate']*float(satpass['good_count'])/max_good_count
             normalpasses.append(satpass)
 
     # Priority scheduler
