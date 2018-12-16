@@ -249,7 +249,7 @@ def get_groundstation_info(ground_station_id):
             found = True
             break
     if found:
-        logging.info('Ground station infromation retrieved!')
+        logging.info('Ground station information retrieved!')
         return o
     else:
         logging.info('No ground station information found!')
