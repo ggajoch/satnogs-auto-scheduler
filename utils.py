@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import ephem
 import lxml
 import settings
+from tqdm import tqdm
 
 
 def get_paginated_endpoint(url, max_entries=None):
@@ -162,7 +163,8 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
     # Loop over satellites
     passes = []
     passid = 0
-    for satellite in satellites:
+    logging.info('Finding all passes for %s satellites:' % len(satellites))
+    for satellite in tqdm(satellites):
         # Set start time
         observer.date = ephem.date(tmin)
 

@@ -12,6 +12,7 @@ from utils import get_active_transmitter_info, get_transmitter_stats, \
     get_groundstation_info, get_last_update, get_scheduled_passes_from_network, ordered_scheduler, \
     efficiency, find_passes, schedule_observation
 import settings
+from tqdm import tqdm
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
@@ -297,11 +298,13 @@ if __name__ == "__main__":
 
     schedule_needed = False
 
+    logging.info("NORAD | Start time          | End time            |  El | Priority | " +
+                 "Transmitter UUID       | Satellite name ")
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         if not satpass['scheduled']:
             schedule_needed = True
             logging.info(
-                "%05d %s %s %3.0f %4.3f %s %s" %
+                "%05d | %s | %s | %3.0f | %4.6f | %s | %s" %
                 (int(
                     satpass['id']),
                     satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
@@ -325,7 +328,8 @@ if __name__ == "__main__":
         form["password"] = password
         session.post(loginUrl, data=form, headers={'referer': loginUrl})  # Login
 
-        for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
+        logging.info('Checking and scheduling passes as needed.')
+        for satpass in tqdm(sorted(scheduledpasses, key=lambda satpass: satpass['tr'])):
             if not satpass['scheduled']:
                 logging.debug(
                     "Scheduling %05d %s %s %3.0f %4.3f %s %s" %
