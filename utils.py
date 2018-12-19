@@ -83,7 +83,11 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
                         "Z",
                         ""),
                     "%Y-%m-%dT%H:%M:%S"),
-                "scheduled": True}
+                "scheduled": True,
+                "altt": o['max_altitude'],
+                "priority": 1,
+                "uuid": o['transmitter'],
+                "name": ''}
 
             if satpass['ts'] > tmin and satpass['tr'] < tmax:
                 scheduledpasses.append(satpass)

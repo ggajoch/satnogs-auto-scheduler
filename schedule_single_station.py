@@ -169,7 +169,7 @@ if __name__ == "__main__":
         # Get NORAD IDs
         norad_cat_ids = sorted(
             set([transmitter["norad_cat_id"] for transmitter in transmitters.values()
-                 if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID ]))
+                 if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID]))
 
         # Store transmitters
         fp = open(
@@ -264,9 +264,11 @@ if __name__ == "__main__":
         else:
             # Find satellite transmitter with highest number of good observations
             max_good_count = max([s['good_count'] for s in passes if s["id"] == satpass["id"]])
-            if max_good_count>0:
-                satpass['priority'] = (
-                    float(satpass['altt']) / 90.0) * satpass['success_rate']*float(satpass['good_count'])/max_good_count
+            if max_good_count > 0:
+                satpass['priority'] = \
+                    (float(satpass['altt']) / 90.0) \
+                    * satpass['success_rate'] \
+                    * float(satpass['good_count']) / max_good_count
             else:
                 satpass['priority'] = (
                     float(satpass['altt']) / 90.0) * satpass['success_rate']
@@ -298,22 +300,21 @@ if __name__ == "__main__":
 
     schedule_needed = False
 
-    logging.info("NORAD | Start time          | End time            |  El | Priority | " +
-                 "Transmitter UUID       | Satellite name ")
+    logging.info("Sch | NORAD | Start time          | End time            |  El | " +
+                 "Priority | Transmitter UUID       | Satellite name ")
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
+        logging.info(
+            "%3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %s" %
+            (satpass['scheduled'],
+             int(satpass['id']),
+             satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
+             satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
+             float(satpass['altt']) if satpass['altt'] else '',
+             satpass['priority'],
+             satpass['uuid'],
+             satpass['name'].rstrip()))
         if not satpass['scheduled']:
             schedule_needed = True
-            logging.info(
-                "%05d | %s | %s | %3.0f | %4.6f | %s | %s" %
-                (int(
-                    satpass['id']),
-                    satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
-                    satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
-                    float(
-                    satpass['altt']),
-                    satpass['priority'],
-                    satpass['uuid'],
-                    satpass['name'].rstrip()))
 
     # Login and schedule passes
     if schedule and schedule_needed:
@@ -328,8 +329,10 @@ if __name__ == "__main__":
         form["password"] = password
         session.post(loginUrl, data=form, headers={'referer': loginUrl})  # Login
 
+        scheduledpasses_sorted = sorted(scheduledpasses, key=lambda satpass: satpass['tr'])
+
         logging.info('Checking and scheduling passes as needed.')
-        for satpass in tqdm(sorted(scheduledpasses, key=lambda satpass: satpass['tr'])):
+        for satpass in tqdm(scheduledpasses_sorted):
             if not satpass['scheduled']:
                 logging.debug(
                     "Scheduling %05d %s %s %3.0f %4.3f %s %s" %
@@ -349,4 +352,4 @@ if __name__ == "__main__":
                                      satpass['tr'].strftime("%Y-%m-%d %H:%M:%S") + ".000",
                                      satpass['ts'].strftime("%Y-%m-%d %H:%M:%S") + ".000")
 
-        logging.info("Scheduled all passes. Exiting!")
+        logging.info("All passes are scheduled. Exiting!")
