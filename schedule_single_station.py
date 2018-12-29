@@ -77,7 +77,10 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--station", help="Ground station ID", type=int)
     parser.add_argument("-t", "--starttime", help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
         default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
-    parser.add_argument("-d", "--duration", help="Duration to schedule [hours]", type=int, default=1)
+    parser.add_argument("-d", "--duration", help="Duration to schedule [hours; default 1.0]", type=float, default=1)
+    parser.add_argument("-w", "--wait",
+                        help="Wait time between consecutive observations (for setup and slewing) [seconds; default: 0.0]",
+                        type=float, default=0)
     parser.add_argument("-u", "--username", help="SatNOGS username")
     parser.add_argument("-p", "--password", help="SatNOGS password")
     parser.add_argument("-n", "--dryrun",  help="Dry run (do not schedule passes)", action="store_true")
@@ -95,6 +98,9 @@ if __name__ == "__main__":
     # Settings
     ground_station_id = args.station
     length_hours = args.duration
+    wait_time_seconds = args.wait
+    if wait_time_seconds < 0:
+        wait_time_seconds = 0.0
     cache_dir = "/tmp/cache"
     username = args.username
     password = args.password
@@ -207,11 +213,9 @@ if __name__ == "__main__":
     priorities = {}
 
     # List of scheduled passes
-    scheduledpasses = get_scheduled_passes_from_network(
-        ground_station_id, tmin, tmax)
-    logging.info(
-        "Found %d scheduled passes between %s and %s on ground station %d" %
-        (len(scheduledpasses), tmin, tmax, ground_station_id))
+    scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
+    logging.info("Found %d scheduled passes between %s and %s on ground station %d" %
+                 (len(scheduledpasses), tmin, tmax, ground_station_id))
 
     # Get passes of priority objects
     prioritypasses = []
@@ -235,25 +239,19 @@ if __name__ == "__main__":
             normalpasses.append(satpass)
 
     # Priority scheduler
-    prioritypasses = sorted(
-        prioritypasses,
-        key=lambda satpass: -
-        satpass['priority'])
-    scheduledpasses = ordered_scheduler(prioritypasses, scheduledpasses)
+    prioritypasses = sorted(prioritypasses, key=lambda satpass: -satpass['priority'])
+    scheduledpasses = ordered_scheduler(prioritypasses, scheduledpasses, wait_time_seconds)
     for satpass in passes:
         logging.debug(satpass)
 
-    # Random scheduler
-    normalpasses = sorted(
-        normalpasses,
-        key=lambda satpass: -
-        satpass['priority'])
-    scheduledpasses = ordered_scheduler(normalpasses, scheduledpasses)
+    # Normal scheduler
+    normalpasses = sorted(normalpasses, key=lambda satpass: -satpass['priority'])
+    scheduledpasses = ordered_scheduler(normalpasses, scheduledpasses, wait_time_seconds)
 
+    # Compute scheduling efficiency
     dt, dttot, eff = efficiency(scheduledpasses)
-    logging.info(
-        "%d passes scheduled out of %d, %.0f s out of %.0f s at %.3f%% efficiency" %
-        (len(scheduledpasses), len(passes), dt, dttot, 100 * eff))
+    logging.info("%d passes scheduled out of %d, %.0f s out of %.0f s at %.3f%% efficiency" %
+                 (len(scheduledpasses), len(passes), dt, dttot, 100 * eff))
 
     # Find unique objects
     satids = sorted(set([satpass['id'] for satpass in passes]))

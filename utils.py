@@ -98,22 +98,28 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     return scheduledpasses
 
 
-def overlap(satpass, scheduledpasses):
+def overlap(satpass, scheduledpasses, wait_time_seconds):
+    """Check if this pass overlaps with already scheduled passes"""
     # No overlap
     overlap = False
+
+    # Add wait time
+    tr = satpass['tr']
+    ts = satpass['ts'] + timedelta(seconds=wait_time_seconds)
+
     # Loop over scheduled passes
     for scheduledpass in scheduledpasses:
         # Test pass falls within scheduled pass
-        if satpass['tr'] >= scheduledpass['tr'] and satpass['ts'] < scheduledpass['ts']:
+        if tr >= scheduledpass['tr'] and ts < scheduledpass['ts']:
             overlap = True
         # Scheduled pass falls within test pass
-        elif scheduledpass['tr'] >= satpass['tr'] and scheduledpass['ts'] < satpass['ts']:
+        elif scheduledpass['tr'] >= tr and scheduledpass['ts'] < ts:
             overlap = True
         # Pass start falls within pass
-        elif satpass['tr'] >= scheduledpass['tr'] and satpass['tr'] < scheduledpass['ts']:
+        elif tr >= scheduledpass['tr'] and tr < scheduledpass['ts']:
             overlap = True
         # Pass end falls within end
-        elif satpass['ts'] >= scheduledpass['tr'] and satpass['ts'] < scheduledpass['ts']:
+        elif ts >= scheduledpass['tr'] and ts < scheduledpass['ts']:
             overlap = True
         if overlap:
             break
@@ -121,23 +127,23 @@ def overlap(satpass, scheduledpasses):
     return overlap
 
 
-def ordered_scheduler(passes, scheduledpasses):
+def ordered_scheduler(passes, scheduledpasses, wait_time_seconds):
     """Loop through a list of ordered passes and schedule each next one that fits"""
     # Loop over passes
     for satpass in passes:
         # Schedule if there is no overlap with already scheduled passes
-        if not overlap(satpass, scheduledpasses):
+        if not overlap(satpass, scheduledpasses, wait_time_seconds):
             scheduledpasses.append(satpass)
 
     return scheduledpasses
 
 
-def random_scheduler(passes, scheduledpasses):
+def random_scheduler(passes, scheduledpasses, wait_time_seconds):
     """Schedule passes based on random ordering"""
     # Shuffle passes
     random.shuffle(passes)
 
-    return ordered_scheduler(passes, scheduledpasses)
+    return ordered_scheduler(passes, scheduledpasses, wait_time_seconds)
 
 
 def efficiency(passes):
