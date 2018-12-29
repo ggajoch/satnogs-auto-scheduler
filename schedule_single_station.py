@@ -75,29 +75,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Automatically schedule observations on a SatNOGS station.")
     parser.add_argument("-s", "--station", help="Ground station ID", type=int)
-    parser.add_argument(
-        "-t",
-        "--starttime",
-        help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
+    parser.add_argument("-t", "--starttime", help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
         default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
-    parser.add_argument(
-        "-d",
-        "--duration",
-        help="Duration to schedule [hours]",
-        type=int,
-        default=1)
+    parser.add_argument("-d", "--duration", help="Duration to schedule [hours]", type=int, default=1)
     parser.add_argument("-u", "--username", help="SatNOGS username")
     parser.add_argument("-p", "--password", help="SatNOGS password")
-    parser.add_argument(
-        "-n",
-        "--dryrun",
-        help="Dry run (do not schedule passes)",
-        action="store_true")
-    parser.add_argument("-l", "--log-level",
-                        default="INFO",
-                        dest="log_level",
-                        type=_log_level_string_to_int,
-                        nargs="?",
+    parser.add_argument("-n", "--dryrun",  help="Dry run (do not schedule passes)", action="store_true")
+    parser.add_argument("-l", "--log-level", default="INFO", dest="log_level",
+                        type=_log_level_string_to_int, nargs="?",
                         help="Set the logging output level. {0}".format(_LOG_LEVEL_STRINGS))
     args = parser.parse_args()
 
@@ -105,8 +90,7 @@ if __name__ == "__main__":
     numeric_level = args.log_level
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level")
-    logging.basicConfig(level=numeric_level,
-                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.basicConfig(level=numeric_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Settings
     ground_station_id = args.station
@@ -129,27 +113,15 @@ if __name__ == "__main__":
         os.mkdir(cache_dir)
 
     # Get last update
-    tlast = get_last_update(
-        os.path.join(
-            cache_dir,
-            "last_update_%d.txt" %
-            ground_station_id))
+    tlast = get_last_update(os.path.join(cache_dir, "last_update_%d.txt" % ground_station_id))
 
     # Update logic
     update = False
     if tlast is None or (tnow - tlast).total_seconds() > settings.CACHE_AGE * 3600:
         update = True
-    if not os.path.isfile(
-        os.path.join(
-            cache_dir,
-            "transmitters_%d.txt" %
-            ground_station_id)):
+    if not os.path.isfile(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id)):
         update = True
-    if not os.path.isfile(
-        os.path.join(
-            cache_dir,
-            "tles_%d.txt" %
-            ground_station_id)):
+    if not os.path.isfile(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id)):
         update = True
 
     # Update
@@ -172,25 +144,19 @@ if __name__ == "__main__":
                  if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID]))
 
         # Store transmitters
-        fp = open(
-            os.path.join(
-                cache_dir,
-                "transmitters_%d.txt" %
-                ground_station_id),
-            "w")
+        fp = open(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id), "w")
         logging.info("Requesting transmitter success rates.")
         transmitters_stats = get_transmitter_stats()
         for transmitter in transmitters_stats:
             if not transmitter['uuid'] in transmitters.keys():
                 continue
 
-            fp.write(
-                "%05d %s %d %d %d\n" %
-                (transmitter["norad_cat_id"],
-                 transmitter["uuid"],
-                 transmitter["success_rate"],
-                 transmitter["good_count"],
-                 transmitter["data_count"]))
+            fp.write("%05d %s %d %d %d\n" %
+                     (transmitter["norad_cat_id"],
+                      transmitter["uuid"],
+                      transmitter["success_rate"],
+                      transmitter["good_count"],
+                      transmitter["data_count"]))
 
         logging.info("Transmitter success rates received!")
         fp.close()
@@ -199,12 +165,7 @@ if __name__ == "__main__":
         tles = fetch_tles(norad_cat_ids)
 
         # Store TLEs
-        fp = open(
-            os.path.join(
-                cache_dir,
-                "tles_%d.txt" %
-                ground_station_id),
-            "w")
+        fp = open(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id), "w")
         for norad_cat_id, (source, tle) in tles.items():
             fp.write("%s\n%s\n%s\n" % (tle[0], tle[1], tle[2]))
         fp.close()
@@ -232,13 +193,12 @@ if __name__ == "__main__":
                 item[0]), item[1], float(item[2]) / 100.0, int(item[3]), int(item[4])
             for tle in tles:
                 if tle.id == norad_cat_id:
-                    satellites.append(
-                        satellite(
-                            tle,
-                            uuid,
-                            success_rate,
-                            good_count,
-                            data_count))
+                    satellites.append(satellite(
+                        tle,
+                        uuid,
+                        success_rate,
+                        good_count,
+                        data_count))
 
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
@@ -336,15 +296,13 @@ if __name__ == "__main__":
             if not satpass['scheduled']:
                 logging.debug(
                     "Scheduling %05d %s %s %3.0f %4.3f %s %s" %
-                    (int(
-                        satpass['id']),
-                        satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
-                        satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
-                        float(
-                        satpass['altt']),
-                        satpass['priority'],
-                        satpass['uuid'],
-                        satpass['name'].rstrip()))
+                    (int(satpass['id']),
+                     satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
+                     satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
+                     float(satpass['altt']),
+                     satpass['priority'],
+                     satpass['uuid'],
+                     satpass['name'].rstrip()))
                 schedule_observation(session,
                                      int(satpass['id']),
                                      satpass['uuid'],
