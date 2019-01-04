@@ -258,8 +258,12 @@ def get_groundstation_info(ground_station_id):
                    ground_station_id))
     for o in r.json():
         if o['id'] == ground_station_id:
-            found = True
+            if o['status'] == 'Online' or o['status'] == 'Testing':
+                found = True
+            else:
+                found = False
             break
+
     if found:
         logging.info('Ground station information retrieved!')
         return o

@@ -13,6 +13,7 @@ from utils import get_active_transmitter_info, get_transmitter_stats, \
     efficiency, find_passes, schedule_observation
 import settings
 from tqdm import tqdm
+import sys
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
@@ -89,6 +90,11 @@ if __name__ == "__main__":
                         help="Set the logging output level. {0}".format(_LOG_LEVEL_STRINGS))
     args = parser.parse_args()
 
+    # Check arguments
+    if args.station == None:
+        parser.print_help()
+        sys.exit()
+    
     # Setting logging level
     numeric_level = args.log_level
     if not isinstance(numeric_level, int):
@@ -113,6 +119,10 @@ if __name__ == "__main__":
 
     # Get ground station information
     ground_station = get_groundstation_info(ground_station_id)
+
+    # Exit if ground station is empty
+    if not ground_station:
+        sys.exit()
 
     # Create cache
     if not os.path.isdir(cache_dir):
@@ -258,12 +268,13 @@ if __name__ == "__main__":
 
     schedule_needed = False
 
-    logging.info("Sch | NORAD | Start time          | End time            |  El | " +
+    logging.info("GS  | Sch | NORAD | Start time          | End time            |  El | " +
                  "Priority | Transmitter UUID       | Satellite name ")
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         logging.info(
-            "%3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %s" %
-            (satpass['scheduled'],
+            "%3d | %3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %s" %
+            (ground_station_id,
+             satpass['scheduled'],
              int(satpass['id']),
              satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
              satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
@@ -273,7 +284,7 @@ if __name__ == "__main__":
              satpass['name'].rstrip()))
         if not satpass['scheduled']:
             schedule_needed = True
-
+            
     # Login and schedule passes
     if schedule and schedule_needed:
         loginUrl = '{}/accounts/login/'.format(settings.NETWORK_BASE_URL)  # login URL
