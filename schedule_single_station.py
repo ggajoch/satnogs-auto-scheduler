@@ -82,8 +82,8 @@ if __name__ == "__main__":
     parser.add_argument("-w", "--wait",
                         help="Wait time between consecutive observations (for setup and slewing) [seconds; default: 0.0]",
                         type=float, default=0)
-    parser.add_argument("-u", "--username", help="SatNOGS username")
-    parser.add_argument("-p", "--password", help="SatNOGS password")
+    parser.add_argument("-u", "--username", help="old SatNOGS Network username (NOT the new Auth0 username)")
+    parser.add_argument("-p", "--password", help="old SatNOGS Network password")
     parser.add_argument("-n", "--dryrun",  help="Dry run (do not schedule passes)", action="store_true")
     parser.add_argument("-l", "--log-level", default="INFO", dest="log_level",
                         type=_log_level_string_to_int, nargs="?",
