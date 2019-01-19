@@ -77,14 +77,15 @@ if __name__ == "__main__":
         description="Automatically schedule observations on a SatNOGS station.")
     parser.add_argument("-s", "--station", help="Ground station ID", type=int)
     parser.add_argument("-t", "--starttime", help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
-        default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
+                        default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
     parser.add_argument("-d", "--duration", help="Duration to schedule [hours; default 1.0]", type=float, default=1)
+    parser.add_argument("-m", "--minelev", help="Min elevation [default 0]", type=float, default=0.)
     parser.add_argument("-w", "--wait",
                         help="Wait time between consecutive observations (for setup and slewing) [seconds; default: 0.0]",
                         type=float, default=0)
     parser.add_argument("-u", "--username", help="old SatNOGS Network username (NOT the new Auth0 username)")
     parser.add_argument("-p", "--password", help="old SatNOGS Network password")
-    parser.add_argument("-n", "--dryrun",  help="Dry run (do not schedule passes)", action="store_true")
+    parser.add_argument("-n", "--dryrun", help="Dry run (do not schedule passes)", action="store_true")
     parser.add_argument("-l", "--log-level", default="INFO", dest="log_level",
                         type=_log_level_string_to_int, nargs="?",
                         help="Set the logging output level. {0}".format(_LOG_LEVEL_STRINGS))
@@ -105,6 +106,7 @@ if __name__ == "__main__":
     ground_station_id = args.station
     length_hours = args.duration
     wait_time_seconds = args.wait
+    minelev = args.minelev
     if wait_time_seconds < 0:
         wait_time_seconds = 0.0
     cache_dir = "/tmp/cache"
@@ -191,7 +193,7 @@ if __name__ == "__main__":
     observer.lon = str(ground_station['lng'])
     observer.lat = str(ground_station['lat'])
     observer.elevation = ground_station['altitude']
-    minimum_altitude = ground_station['min_horizon']
+    minimum_altitude = max(ground_station['min_horizon'], minelev)
 
     # Read tles
     with open(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id), "r") as f:
@@ -220,7 +222,39 @@ if __name__ == "__main__":
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
 
     # Priorities
-    priorities = {}
+    priorities = {
+        '25544' : .8, #"ISS";
+        '43017' : 1.0, #"FOX-1B";
+        '43770' : 1.0, #"FOX-1C";
+        '43137' : 1.0, #"FOX-1D";
+        '40967' : .3, #"FOX-1A";
+        '25338' : .8, #"NOAA-15";
+        '28654' : .8, #"NOAA-18";
+        '33591' : .8, #"NOAA-19";
+        '40654' : .4, #"NO-84";
+        '40903' : .4, #"XW-2A";
+        '40907' : .4, #"XW-2D";
+        '40909' : .4, #"XW-2E";
+        '40910' : .4, #"XW-2F";
+        '42761' : .4, #"CAS-4A";
+        '42759' : .4, #"CAS-4B";
+        '40069' : .3, #"METEOR-M2";
+        '43792' : .8, #"FUNCUBE-4";
+        '39444' : .3, #"FUNCUBE-1";
+        '42017' : .3, #"NAYIF-1";
+        '42778' : .3, #"MAXVALIER";
+    }
+
+    favorite_transmitters = {
+        '43017' : 'KgazZMKEa74VnquqXLwAvD', #"FOX-1B";
+        '43137' : '3rLGJWqj3XZ6Z8vADCRwiW', #"FOX-1D";
+        '43770' : 'bxfwWfvm9UaXRvVfyhcjt6', #"FOX-1C";
+        '40967' : 'ZyjKNJ9KqnTHBCUzAPN5G5', #"FOX-1A";
+        '25338' : 'mjsHcYajEgbiS9cbKfecGo', #"NOAA-15";
+        '28654' : 'u2h8AaSR7ZJPreFgVDtcfP', #"NOAA-18";
+        '33591' : 'kE4VaYKpnFmzEquEjKKi8D', #"NOAA-19";
+        '43792' : 'cmw2kqKrADT2JYGhwSfui3', #"FUNCUBE-4";
+    }
 
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
@@ -234,6 +268,8 @@ if __name__ == "__main__":
         # Get user defined priorities
         if satpass['id'] in priorities:
             satpass['priority'] = priorities[satpass['id']]
+            if satpass['id'] in favorite_transmitters:
+                satpass['uuid'] = favorite_transmitters[satpass['id']]
             prioritypasses.append(satpass)
         else:
             # Find satellite transmitter with highest number of good observations
