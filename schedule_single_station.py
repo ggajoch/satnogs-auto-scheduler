@@ -79,7 +79,10 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--starttime", help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
                         default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
     parser.add_argument("-d", "--duration", help="Duration to schedule [hours; default 1.0]", type=float, default=1)
-    parser.add_argument("-m", "--minelev", help="Min elevation [default 0]", type=float, default=0.)
+    parser.add_argument("-m", "--min-horizon", help="Minimum horizon [default 0]", type=float, default=0.)
+    parser.add_argument("-f", "--no-search-transmitters", help="Do not search good transmitters [default searching]", 
+                        dest='search_transmitters', action='store_false')
+    parser.set_defaults(search_transmitters=True)
     parser.add_argument("-w", "--wait",
                         help="Wait time between consecutive observations (for setup and slewing) [seconds; default: 0.0]",
                         type=float, default=0)
@@ -106,13 +109,14 @@ if __name__ == "__main__":
     ground_station_id = args.station
     length_hours = args.duration
     wait_time_seconds = args.wait
-    minelev = args.minelev
+    min_horizon_arg = args.min_horizon
     if wait_time_seconds < 0:
         wait_time_seconds = 0.0
     cache_dir = "/tmp/cache"
     username = args.username
     password = args.password
     schedule = not args.dryrun
+    search_transmitters = args.search_transmitters
 
     # Set time range
     tnow = datetime.strptime(args.starttime, "%Y-%m-%dT%H:%M:%S")
@@ -193,7 +197,7 @@ if __name__ == "__main__":
     observer.lon = str(ground_station['lng'])
     observer.lat = str(ground_station['lat'])
     observer.elevation = ground_station['altitude']
-    minimum_altitude = max(ground_station['min_horizon'], minelev)
+    minimum_altitude = max(ground_station['min_horizon'], min_horizon_arg)
 
     # Read tles
     with open(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id), "r") as f:
@@ -271,7 +275,7 @@ if __name__ == "__main__":
             if satpass['id'] in favorite_transmitters:
                 satpass['uuid'] = favorite_transmitters[satpass['id']]
             prioritypasses.append(satpass)
-        else:
+        elif search_transmitters:
             # Find satellite transmitter with highest number of good observations
             max_good_count = max([s['good_count'] for s in passes if s["id"] == satpass["id"]])
             if max_good_count > 0:
