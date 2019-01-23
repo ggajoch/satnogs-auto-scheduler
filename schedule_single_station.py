@@ -10,7 +10,7 @@ import argparse
 import logging
 from utils import get_active_transmitter_info, get_transmitter_stats, \
     get_groundstation_info, get_last_update, get_scheduled_passes_from_network, ordered_scheduler, \
-    efficiency, find_passes, schedule_observation
+    efficiency, find_passes, schedule_observation, read_priorities_transmitters
 import settings
 from tqdm import tqdm
 import sys
@@ -225,40 +225,13 @@ if __name__ == "__main__":
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
 
-    # Priorities
-    priorities = {
-        '25544' : .8, #"ISS";
-        '43017' : 1.0, #"FOX-1B";
-        '43770' : 1.0, #"FOX-1C";
-        '43137' : 1.0, #"FOX-1D";
-        '40967' : .3, #"FOX-1A";
-        '25338' : .8, #"NOAA-15";
-        '28654' : .8, #"NOAA-18";
-        '33591' : .8, #"NOAA-19";
-        '40654' : .4, #"NO-84";
-        '40903' : .4, #"XW-2A";
-        '40907' : .4, #"XW-2D";
-        '40909' : .4, #"XW-2E";
-        '40910' : .4, #"XW-2F";
-        '42761' : .4, #"CAS-4A";
-        '42759' : .4, #"CAS-4B";
-        '40069' : .3, #"METEOR-M2";
-        '43792' : .8, #"FUNCUBE-4";
-        '39444' : .3, #"FUNCUBE-1";
-        '42017' : .3, #"NAYIF-1";
-        '42778' : .3, #"MAXVALIER";
-    }
-
-    favorite_transmitters = {
-        '43017' : 'KgazZMKEa74VnquqXLwAvD', #"FOX-1B";
-        '43137' : '3rLGJWqj3XZ6Z8vADCRwiW', #"FOX-1D";
-        '43770' : 'bxfwWfvm9UaXRvVfyhcjt6', #"FOX-1C";
-        '40967' : 'ZyjKNJ9KqnTHBCUzAPN5G5', #"FOX-1A";
-        '25338' : 'mjsHcYajEgbiS9cbKfecGo', #"NOAA-15";
-        '28654' : 'u2h8AaSR7ZJPreFgVDtcfP', #"NOAA-18";
-        '33591' : 'kE4VaYKpnFmzEquEjKKi8D', #"NOAA-19";
-        '43792' : 'cmw2kqKrADT2JYGhwSfui3', #"FUNCUBE-4";
-    }
+    # Priorities and favorite transmitters
+    # read the following format
+    #   43017 1. KgazZMKEa74VnquqXLwAvD
+    if os.path.exists('satpriorities.csv'):
+        priorities, favorite_transmitters = read_priorities_transmitters('satpriorities.csv')
+    else:
+        priorities, favorite_transmitters = {}, {}
 
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
