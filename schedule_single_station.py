@@ -278,7 +278,7 @@ if __name__ == "__main__":
              int(satpass['id']),
              satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
              satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
-             float(satpass['altt']) if satpass['altt'] else '',
+             float(satpass['altt']) if satpass['altt'] else 0.,
              satpass['priority'],
              satpass['uuid'],
              satpass['name'].rstrip()))
