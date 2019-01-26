@@ -89,6 +89,7 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--username", help="old SatNOGS Network username (NOT the new Auth0 username)")
     parser.add_argument("-p", "--password", help="old SatNOGS Network password")
     parser.add_argument("-n", "--dryrun", help="Dry run (do not schedule passes)", action="store_true")
+    parser.add_argument("-P", "--priorities", help="File with transmitter priorities. Should have columns of the form |NORAD priority UUID| like |43017 0.9 KgazZMKEa74VnquqXLwAvD|. Priority is fractional, one transmitter per line.", default=None)
     parser.add_argument("-l", "--log-level", default="INFO", dest="log_level",
                         type=_log_level_string_to_int, nargs="?",
                         help="Set the logging output level. {0}".format(_LOG_LEVEL_STRINGS))
@@ -117,7 +118,8 @@ if __name__ == "__main__":
     password = args.password
     schedule = not args.dryrun
     search_transmitters = args.search_transmitters
-
+    priority_filename = args.priorities
+    
     # Set time range
     tnow = datetime.strptime(args.starttime, "%Y-%m-%dT%H:%M:%S")
     tmin = tnow
@@ -228,8 +230,8 @@ if __name__ == "__main__":
     # Priorities and favorite transmitters
     # read the following format
     #   43017 1. KgazZMKEa74VnquqXLwAvD
-    if os.path.exists('satpriorities.csv'):
-        priorities, favorite_transmitters = read_priorities_transmitters('satpriorities.csv')
+    if priority_filename!=None and os.path.exists(priority_filename):
+        priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
     else:
         priorities, favorite_transmitters = {}, {}
 
