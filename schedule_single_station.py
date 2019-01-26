@@ -10,7 +10,7 @@ import argparse
 import logging
 from utils import get_active_transmitter_info, get_transmitter_stats, \
     get_groundstation_info, get_last_update, get_scheduled_passes_from_network, ordered_scheduler, \
-    efficiency, find_passes, schedule_observation
+    efficiency, find_passes, schedule_observation, read_priorities_transmitters
 import settings
 from tqdm import tqdm
 import sys
@@ -77,14 +77,19 @@ if __name__ == "__main__":
         description="Automatically schedule observations on a SatNOGS station.")
     parser.add_argument("-s", "--station", help="Ground station ID", type=int)
     parser.add_argument("-t", "--starttime", help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
-        default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
+                        default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
     parser.add_argument("-d", "--duration", help="Duration to schedule [hours; default 1.0]", type=float, default=1)
+    parser.add_argument("-m", "--min-horizon", help="Minimum horizon [default 0]", type=float, default=0.)
+    parser.add_argument("-f", "--no-search-transmitters", help="Do not search good transmitters [default searching]", 
+                        dest='search_transmitters', action='store_false')
+    parser.set_defaults(search_transmitters=True)
     parser.add_argument("-w", "--wait",
                         help="Wait time between consecutive observations (for setup and slewing) [seconds; default: 0.0]",
                         type=float, default=0)
     parser.add_argument("-u", "--username", help="old SatNOGS Network username (NOT the new Auth0 username)")
     parser.add_argument("-p", "--password", help="old SatNOGS Network password")
-    parser.add_argument("-n", "--dryrun",  help="Dry run (do not schedule passes)", action="store_true")
+    parser.add_argument("-n", "--dryrun", help="Dry run (do not schedule passes)", action="store_true")
+    parser.add_argument("-P", "--priorities", help="File with transmitter priorities. Should have columns of the form |NORAD priority UUID| like |43017 0.9 KgazZMKEa74VnquqXLwAvD|. Priority is fractional, one transmitter per line.", default=None)
     parser.add_argument("-l", "--log-level", default="INFO", dest="log_level",
                         type=_log_level_string_to_int, nargs="?",
                         help="Set the logging output level. {0}".format(_LOG_LEVEL_STRINGS))
@@ -105,13 +110,16 @@ if __name__ == "__main__":
     ground_station_id = args.station
     length_hours = args.duration
     wait_time_seconds = args.wait
+    min_horizon_arg = args.min_horizon
     if wait_time_seconds < 0:
         wait_time_seconds = 0.0
     cache_dir = "/tmp/cache"
     username = args.username
     password = args.password
     schedule = not args.dryrun
-
+    search_transmitters = args.search_transmitters
+    priority_filename = args.priorities
+    
     # Set time range
     tnow = datetime.strptime(args.starttime, "%Y-%m-%dT%H:%M:%S")
     tmin = tnow
@@ -191,7 +199,7 @@ if __name__ == "__main__":
     observer.lon = str(ground_station['lng'])
     observer.lat = str(ground_station['lat'])
     observer.elevation = ground_station['altitude']
-    minimum_altitude = ground_station['min_horizon']
+    minimum_altitude = max(ground_station['min_horizon'], min_horizon_arg)
 
     # Read tles
     with open(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id), "r") as f:
@@ -219,8 +227,13 @@ if __name__ == "__main__":
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
 
-    # Priorities
-    priorities = {}
+    # Priorities and favorite transmitters
+    # read the following format
+    #   43017 1. KgazZMKEa74VnquqXLwAvD
+    if priority_filename!=None and os.path.exists(priority_filename):
+        priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
+    else:
+        priorities, favorite_transmitters = {}, {}
 
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
@@ -234,8 +247,10 @@ if __name__ == "__main__":
         # Get user defined priorities
         if satpass['id'] in priorities:
             satpass['priority'] = priorities[satpass['id']]
+            if satpass['id'] in favorite_transmitters:
+                satpass['uuid'] = favorite_transmitters[satpass['id']]
             prioritypasses.append(satpass)
-        else:
+        elif search_transmitters:
             # Find satellite transmitter with highest number of good observations
             max_good_count = max([s['good_count'] for s in passes if s["id"] == satpass["id"]])
             if max_good_count > 0:
