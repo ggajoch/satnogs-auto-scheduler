@@ -311,7 +311,12 @@ if __name__ == "__main__":
         form = {x.attrib["name"]: x.attrib["value"] for x in login_hidden_inputs}
         form["login"] = username
         form["password"] = password
-        session.post(loginUrl, data=form, headers={'referer': loginUrl})  # Login
+
+        # Login
+        session.post(loginUrl,
+                     data=form,
+                     headers={'referer': loginUrl,
+                              'user-agent': 'satnogs-auto-scheduler/0.0.1'})
 
         scheduledpasses_sorted = sorted(scheduledpasses, key=lambda satpass: satpass['tr'])
 
