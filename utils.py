@@ -40,7 +40,19 @@ def read_priorities_transmitters(filename):
             sattrans[sat] = transmitter
     return (satprio, sattrans)
 
+def get_satellite_info():
+    # Open session
+    logging.info("Fetching satellite information from DB.")
+    r = requests.get('{}/api/satellites'.format(settings.DB_BASE_URL))
+    logging.info("Satellites received!")
 
+    # Select alive satellites
+    norad_cat_ids = []
+    for o in r.json():
+        if o["status"] == "alive":
+            norad_cat_ids.append(o["norad_cat_id"])
+
+    return norad_cat_ids
 
 def get_active_transmitter_info(fmin, fmax):
     # Open session

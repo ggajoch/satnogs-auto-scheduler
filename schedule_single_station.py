@@ -10,7 +10,8 @@ import argparse
 import logging
 from utils import get_active_transmitter_info, get_transmitter_stats, \
     get_groundstation_info, get_last_update, get_scheduled_passes_from_network, ordered_scheduler, \
-    efficiency, find_passes, schedule_observation, read_priorities_transmitters
+    efficiency, find_passes, schedule_observation, read_priorities_transmitters, \
+    get_satellite_info
 import settings
 from tqdm import tqdm
 import sys
@@ -162,19 +163,27 @@ if __name__ == "__main__":
                                                            antenna["frequency_max"]):
                 transmitters[transmitter['uuid']] = transmitter
 
+        # Get satellites which are alive
+        alive_norad_cat_ids = get_satellite_info()
+                
         # Get NORAD IDs
         norad_cat_ids = sorted(
             set([transmitter["norad_cat_id"] for transmitter in transmitters.values()
-                 if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID]))
+                 if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID
+                 and transmitter["norad_cat_id"] in alive_norad_cat_ids]))
 
         # Store transmitters
         fp = open(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id), "w")
         logging.info("Requesting transmitter success rates.")
         transmitters_stats = get_transmitter_stats()
         for transmitter in transmitters_stats:
+            # Skip absent transmitters
             if not transmitter['uuid'] in transmitters.keys():
                 continue
-
+            # Skip dead satellites
+            if transmitter["norad_cat_id"] not in alive_norad_cat_ids:
+                continue
+ 
             fp.write("%05d %s %d %d %d\n" %
                      (transmitter["norad_cat_id"],
                       transmitter["uuid"],
