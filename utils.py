@@ -7,8 +7,6 @@ import ephem
 import lxml
 import settings
 from tqdm import tqdm
-import csv
-
 
 def get_paginated_endpoint(url, max_entries=None):
     r = requests.get(url=url)
@@ -26,16 +24,16 @@ def get_paginated_endpoint(url, max_entries=None):
 
     return data
 
-
 def read_priorities_transmitters(filename):
-    with open(filename, 'rb') as csvfile:
+    with open(filename, "r") as fp:
         satprio = {}
         sattrans = {}
-        csvreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
-        for row in csvreader:
-            sat = row[0]
-            prio = row[1]
-            transmitter = row[2]
+        lines = fp.readlines()
+        for line in lines:
+            parts = line.strip().split(" ")
+            sat = parts[0]
+            prio = parts[1]
+            transmitter = parts[2]
             satprio[sat] = float(prio)
             sattrans[sat] = transmitter
     return (satprio, sattrans)

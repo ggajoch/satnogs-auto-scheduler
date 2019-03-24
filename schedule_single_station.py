@@ -120,7 +120,7 @@ if __name__ == "__main__":
     schedule = not args.dryrun
     search_transmitters = args.search_transmitters
     priority_filename = args.priorities
-    
+
     # Set time range
     tnow = datetime.strptime(args.starttime, "%Y-%m-%dT%H:%M:%S")
     tmin = tnow
@@ -215,7 +215,7 @@ if __name__ == "__main__":
         lines = f.readlines()
         tles = [twolineelement(lines[i], lines[i + 1], lines[i + 2])
                 for i in range(0, len(lines), 3)]
-
+   
     # Read transmitters
     satellites = []
     with open(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id), "r") as f:
@@ -232,7 +232,7 @@ if __name__ == "__main__":
                         success_rate,
                         good_count,
                         data_count))
-
+      
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
 
