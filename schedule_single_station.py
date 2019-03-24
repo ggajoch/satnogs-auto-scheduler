@@ -322,11 +322,16 @@ if __name__ == "__main__":
         form["password"] = password
 
         # Login
-        session.post(loginUrl,
-                     data=form,
-                     headers={'referer': loginUrl,
-                              'user-agent': 'satnogs-auto-scheduler/0.0.1'})
+        result = session.post(loginUrl,
+                              data=form,
+                              headers={'referer': loginUrl,
+                                       'user-agent': 'satnogs-auto-scheduler/0.0.1'})
+        if result.url.endswith("/accounts/login/"):
+            logging.info("Authentication failed")
+        else:
+            logging.info("Authentication successful")
 
+        # Sort passes
         scheduledpasses_sorted = sorted(scheduledpasses, key=lambda satpass: satpass['tr'])
 
         logging.info('Checking and scheduling passes as needed.')
