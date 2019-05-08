@@ -8,6 +8,7 @@ import lxml
 import settings
 from tqdm import tqdm
 
+
 def get_paginated_endpoint(url, max_entries=None):
     r = requests.get(url=url)
     r.raise_for_status()
@@ -24,6 +25,7 @@ def get_paginated_endpoint(url, max_entries=None):
 
     return data
 
+
 def read_priorities_transmitters(filename):
     with open(filename, "r") as fp:
         satprio = {}
@@ -37,6 +39,7 @@ def read_priorities_transmitters(filename):
             satprio[sat] = float(prio)
             sattrans[sat] = transmitter
     return (satprio, sattrans)
+
 
 def get_satellite_info():
     # Open session
@@ -52,6 +55,7 @@ def get_satellite_info():
 
     return norad_cat_ids
 
+
 def get_active_transmitter_info(fmin, fmax):
     # Open session
     logging.info("Fetching transmitter information from DB.")
@@ -62,7 +66,7 @@ def get_active_transmitter_info(fmin, fmax):
     transmitters = []
     for o in r.json():
         if o["downlink_low"]:
-            if o["alive"] and o["downlink_low"] > fmin and o["downlink_low"] <= fmax:
+            if o["status"] == "active" and o["downlink_low"] > fmin and o["downlink_low"] <= fmax:
                 transmitter = {"norad_cat_id": o["norad_cat_id"],
                                "uuid": o["uuid"]}
                 transmitters.append(transmitter)

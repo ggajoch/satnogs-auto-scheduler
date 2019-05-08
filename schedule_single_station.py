@@ -72,40 +72,49 @@ def _log_level_string_to_int(log_level_string):
     return log_level_int
 
 
-if __name__ == "__main__":
+def main():
     # Parse arguments
     parser = argparse.ArgumentParser(
         description="Automatically schedule observations on a SatNOGS station.")
     parser.add_argument("-s", "--station", help="Ground station ID", type=int)
     parser.add_argument("-t", "--starttime", help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
                         default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
-    parser.add_argument("-d", "--duration", help="Duration to schedule [hours; default 1.0]", type=float, default=1)
-    parser.add_argument("-m", "--min-horizon", help="Minimum horizon [default 0]", type=float, default=0.)
-    parser.add_argument("-f", "--no-search-transmitters", help="Do not search good transmitters [default searching]", 
+    parser.add_argument("-d", "--duration", help="Duration to schedule [hours; default 1.0]",
+                        type=float, default=1)
+    parser.add_argument("-m", "--min-horizon", help="Minimum horizon [default 0]", type=float,
+                        default=0.)
+    parser.add_argument("-f", "--no-search-transmitters",
+                        help="Do not search good transmitters [default searching]",
                         dest='search_transmitters', action='store_false')
     parser.set_defaults(search_transmitters=True)
     parser.add_argument("-w", "--wait",
-                        help="Wait time between consecutive observations (for setup and slewing) [seconds; default: 0.0]",
-                        type=float, default=0)
-    parser.add_argument("-u", "--username", help="old SatNOGS Network username (NOT the new Auth0 username)")
+                        help="Wait time between consecutive observations (for setup and slewing)" +
+                        " [seconds; default: 0.0]", type=float, default=0)
+    parser.add_argument("-u", "--username",
+                        help="old SatNOGS Network username (NOT the new Auth0 username)")
     parser.add_argument("-p", "--password", help="old SatNOGS Network password")
-    parser.add_argument("-n", "--dryrun", help="Dry run (do not schedule passes)", action="store_true")
-    parser.add_argument("-P", "--priorities", help="File with transmitter priorities. Should have columns of the form |NORAD priority UUID| like |43017 0.9 KgazZMKEa74VnquqXLwAvD|. Priority is fractional, one transmitter per line.", default=None)
+    parser.add_argument("-n", "--dryrun", help="Dry run (do not schedule passes)",
+                        action="store_true")
+    parser.add_argument("-P", "--priorities", help="File with transmitter priorities. Should have" +
+                        "columns of the form |NORAD priority UUID| like |43017 0.9" +
+                        " KgazZMKEa74VnquqXLwAvD|. Priority is fractional, one transmitter " +
+                        "per line.", default=None)
     parser.add_argument("-l", "--log-level", default="INFO", dest="log_level",
                         type=_log_level_string_to_int, nargs="?",
                         help="Set the logging output level. {0}".format(_LOG_LEVEL_STRINGS))
     args = parser.parse_args()
 
     # Check arguments
-    if args.station == None:
+    if args.station is None:
         parser.print_help()
         sys.exit()
-    
+
     # Setting logging level
     numeric_level = args.log_level
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level")
-    logging.basicConfig(level=numeric_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.basicConfig(level=numeric_level,
+                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Settings
     ground_station_id = args.station
@@ -165,31 +174,32 @@ if __name__ == "__main__":
 
         # Get satellites which are alive
         alive_norad_cat_ids = get_satellite_info()
-                
+
         # Get NORAD IDs
         norad_cat_ids = sorted(
             set([transmitter["norad_cat_id"] for transmitter in transmitters.values()
-                 if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID
-                 and transmitter["norad_cat_id"] in alive_norad_cat_ids]))
+                 if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID and
+                 transmitter["norad_cat_id"] in alive_norad_cat_ids]))
 
         # Store transmitters
         fp = open(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id), "w")
         logging.info("Requesting transmitter success rates.")
         transmitters_stats = get_transmitter_stats()
         for transmitter in transmitters_stats:
+            uuid = transmitter["uuid"]
             # Skip absent transmitters
-            if not transmitter['uuid'] in transmitters.keys():
+            if uuid not in transmitters.keys():
                 continue
             # Skip dead satellites
-            if transmitter["norad_cat_id"] not in alive_norad_cat_ids:
+            if transmitters[uuid]["norad_cat_id"] not in alive_norad_cat_ids:
                 continue
- 
+
             fp.write("%05d %s %d %d %d\n" %
-                     (transmitter["norad_cat_id"],
-                      transmitter["uuid"],
-                      transmitter["success_rate"],
-                      transmitter["good_count"],
-                      transmitter["data_count"]))
+                     (transmitters[uuid]["norad_cat_id"],
+                      uuid,
+                      transmitter["stats"]["success_rate"],
+                      transmitter["stats"]["good_count"],
+                      transmitter["stats"]["total_count"]))
 
         logging.info("Transmitter success rates received!")
         fp.close()
@@ -215,7 +225,7 @@ if __name__ == "__main__":
         lines = f.readlines()
         tles = [twolineelement(lines[i], lines[i + 1], lines[i + 2])
                 for i in range(0, len(lines), 3)]
-   
+
     # Read transmitters
     satellites = []
     with open(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id), "r") as f:
@@ -232,14 +242,14 @@ if __name__ == "__main__":
                         success_rate,
                         good_count,
                         data_count))
-      
+
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
 
     # Priorities and favorite transmitters
     # read the following format
     #   43017 1. KgazZMKEa74VnquqXLwAvD
-    if priority_filename!=None and os.path.exists(priority_filename):
+    if priority_filename is not None and os.path.exists(priority_filename):
         priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
     else:
         priorities, favorite_transmitters = {}, {}
@@ -308,7 +318,7 @@ if __name__ == "__main__":
              satpass['name'].rstrip()))
         if not satpass['scheduled']:
             schedule_needed = True
-            
+
     # Login and schedule passes
     if schedule and schedule_needed:
         loginUrl = '{}/accounts/login/'.format(settings.NETWORK_BASE_URL)  # login URL
@@ -354,3 +364,7 @@ if __name__ == "__main__":
                                      satpass['ts'].strftime("%Y-%m-%d %H:%M:%S") + ".000")
 
         logging.info("All passes are scheduled. Exiting!")
+
+
+if __name__ == '__main__':
+    main()
