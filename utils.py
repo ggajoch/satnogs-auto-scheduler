@@ -299,26 +299,27 @@ def get_priority_passes(passes, priorities, favorite_transmitters, search):
 def get_groundstation_info(ground_station_id):
 
     logging.info("Requesting information for ground station %d" % ground_station_id)
-    client = requests.session()
 
     # Loop
     found = False
-    r = client.get("{}/api/stations/?id={:d}".format(settings.NETWORK_BASE_URL, ground_station_id))
-    for o in r.json():
-        if o['id'] == ground_station_id:
-            if o['status'] == 'Online' or o['status'] == 'Testing':
-                found = True
-            else:
-                found = False
-            break
+    r = requests.get("{}/api/stations/?id={:d}".format(settings.NETWORK_BASE_URL, ground_station_id))
 
-    if found:
-        logging.info('Ground station information retrieved!')
-        return o
-    else:
+    selected_stations = list(filter(lambda s: s['id'] == ground_station_id, r.json()))
+
+    if not selected_stations:
         logging.info('No ground station information found!')
         # Exit if no ground station found
         sys.exit()
+
+    logging.info('Ground station information retrieved!')
+    station = selected_stations[0]
+
+    if station['status'] == 'Online' or station['status'] == 'Testing':
+        return station
+    else:
+        logging.info("Ground station {} neither in 'online' nor in 'testing' mode, " \
+                     "can't schedule!".format(ground_station_id))
+        return {}
 
 
 def get_last_update(fname):
