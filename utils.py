@@ -96,6 +96,10 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     scheduledpasses = []
 
     logging.info("Requesting scheduled passes for ground station %d" % ground_station)
+    # Fetch observations until the time of the end of the last fetched observation happends to be
+    # before the start time of the selected timerange for scheduling
+    # NOTE: This algorithm is based on the order in which the API returns the observations, i.e.
+    # most recent observations are returned at first!
     while True:
         if start:
             r = client.get('{}/api/observations/?ground_station={:d}'.format(
@@ -105,7 +109,11 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
             nextpage = r.links.get("next")
             r = client.get(nextpage["url"])
 
-        # r.json() is a list of dicts
+        if not r.json():
+            # Ground station has no observations yet
+            break
+
+        # r.json() is a list of dicts/observations
         for o in r.json():
             satpass = {
                 "id": o['norad_cat_id'],
@@ -119,8 +127,11 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
             }
 
             if satpass['ts'] > tmin and satpass['tr'] < tmax:
+                # Only store observations which are during the ROI for scheduling
                 scheduledpasses.append(satpass)
+
         if satpass['ts'] < tmin:
+            # Last fetched observation is older than the ROI for scheduling, end loop.
             break
 
     logging.info("Scheduled passes for ground station %d retrieved!" % ground_station)
