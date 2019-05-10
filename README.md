@@ -10,6 +10,11 @@ SatNOGS network. It uses code from the SatNOGS network scheduler. It requires
 pip install -r requirements.txt
 ```
 
+## Configuration
+
+Copy the env-dist file to .env and set your legacy SatNOGS Network credentials.
+
+
 ## Usage
 
 The following command will list all available command-line arguments:
@@ -19,4 +24,4 @@ The following command will list all available command-line arguments:
 
 ## License
 [![license](https://img.shields.io/badge/license-AGPL%203.0-6672D8.svg)](LICENSE)
-Copyright 2018 - Cees Bassa, Fabian Schmidt, Pierros Papadeas
+Copyright 2019 - Cees Bassa, Fabian Schmidt, Pierros Papadeas

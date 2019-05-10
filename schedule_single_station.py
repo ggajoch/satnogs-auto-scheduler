@@ -90,9 +90,6 @@ def main():
     parser.add_argument("-w", "--wait",
                         help="Wait time between consecutive observations (for setup and slewing)" +
                         " [seconds; default: 0.0]", type=float, default=0)
-    parser.add_argument("-u", "--username",
-                        help="old SatNOGS Network username (NOT the new Auth0 username)")
-    parser.add_argument("-p", "--password", help="old SatNOGS Network password")
     parser.add_argument("-n", "--dryrun", help="Dry run (do not schedule passes)",
                         action="store_true")
     parser.add_argument("-P", "--priorities", help="File with transmitter priorities. Should have" +
@@ -124,8 +121,6 @@ def main():
     if wait_time_seconds < 0:
         wait_time_seconds = 0.0
     cache_dir = "/tmp/cache"
-    username = args.username
-    password = args.password
     schedule = not args.dryrun
     search_transmitters = args.search_transmitters
     priority_filename = args.priorities
@@ -328,8 +323,8 @@ def main():
         login_hidden_inputs = login_html.xpath(
             r'//form//input[@type="hidden"]')  # Get CSFR token
         form = {x.attrib["name"]: x.attrib["value"] for x in login_hidden_inputs}
-        form["login"] = username
-        form["password"] = password
+        form["login"] = settings.NETWORK_USERNAME
+        form["password"] = settings.NETWORK_PASSWORD
 
         # Login
         result = session.post(loginUrl,
