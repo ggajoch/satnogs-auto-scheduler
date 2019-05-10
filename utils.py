@@ -67,8 +67,7 @@ def get_active_transmitter_info(fmin, fmax):
     for o in r.json():
         if o["downlink_low"]:
             if o["status"] == "active" and o["downlink_low"] > fmin and o["downlink_low"] <= fmax:
-                transmitter = {"norad_cat_id": o["norad_cat_id"],
-                               "uuid": o["uuid"]}
+                transmitter = {"norad_cat_id": o["norad_cat_id"], "uuid": o["uuid"]}
                 transmitters.append(transmitter)
     logging.info("Transmitters filtered based on ground station capability.")
     return transmitters
@@ -92,8 +91,7 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     while True:
         if start:
             r = client.get('{}/api/observations/?ground_station={:d}'.format(
-                           settings.NETWORK_BASE_URL,
-                           ground_station))
+                settings.NETWORK_BASE_URL, ground_station))
             start = False
         else:
             nextpage = r.links.get("next")
@@ -103,21 +101,14 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
         for o in r.json():
             satpass = {
                 "id": o['norad_cat_id'],
-                "tr": datetime.strptime(
-                    o['start'].replace(
-                        "Z",
-                        ""),
-                    "%Y-%m-%dT%H:%M:%S"),
-                "ts": datetime.strptime(
-                    o['end'].replace(
-                        "Z",
-                        ""),
-                    "%Y-%m-%dT%H:%M:%S"),
+                "tr": datetime.strptime(o['start'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S"),
+                "ts": datetime.strptime(o['end'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S"),
                 "scheduled": True,
                 "altt": o['max_altitude'],
                 "priority": 1,
                 "uuid": o['transmitter'],
-                "name": ''}
+                "name": ''
+            }
 
             if satpass['ts'] > tmin and satpass['tr'] < tmax:
                 scheduledpasses.append(satpass)
@@ -195,8 +186,7 @@ def efficiency(passes):
     # Total time covered
     dttot = tmax - tmin
 
-    return dt.total_seconds(), dttot.total_seconds(
-    ), dt.total_seconds() / dttot.total_seconds()
+    return dt.total_seconds(), dttot.total_seconds(), dt.total_seconds() / dttot.total_seconds()
 
 
 def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
@@ -210,9 +200,7 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
 
         # Load TLE
         try:
-            sat_ephem = ephem.readtle(str(satellite.tle0),
-                                      str(satellite.tle1),
-                                      str(satellite.tle2))
+            sat_ephem = ephem.readtle(str(satellite.tle0), str(satellite.tle1), str(satellite.tle2))
         except (ValueError, AttributeError):
             continue
 
@@ -246,30 +234,30 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
             if tr < ephem.date(tmax):
                 if (float(elevation) >= minimum_altitude and tr < ts):
                     valid = True
-                    if tr < ephem.Date(datetime.now() +
-                                       timedelta(minutes=5)):
+                    if tr < ephem.Date(datetime.now() + timedelta(minutes=5)):
                         valid = False
-                    satpass = {'passid': passid,
-                               'mytime': str(observer.date),
-                               'name': str(satellite.name),
-                               'id': str(satellite.id),
-                               'tle1': str(satellite.tle1),
-                               'tle2': str(satellite.tle2),
-                               'tr': tr.datetime(),  # Rise time
-                               'azr': azimuth_r,     # Rise Azimuth
-                               'tt': tt.datetime(),  # Max altitude time
-                               'altt': elevation,    # Max altitude
-                               'ts': ts.datetime(),  # Set time
-                               'azs': azimuth_s,     # Set azimuth
-                               'valid': valid,
-                               'uuid': satellite.transmitter,
-                               'success_rate': satellite.success_rate,
-                               'good_count': satellite.good_count,
-                               'data_count': satellite.data_count,
-                               'scheduled': False}
+                    satpass = {
+                        'passid': passid,
+                        'mytime': str(observer.date),
+                        'name': str(satellite.name),
+                        'id': str(satellite.id),
+                        'tle1': str(satellite.tle1),
+                        'tle2': str(satellite.tle2),
+                        'tr': tr.datetime(),  # Rise time
+                        'azr': azimuth_r,  # Rise Azimuth
+                        'tt': tt.datetime(),  # Max altitude time
+                        'altt': elevation,  # Max altitude
+                        'ts': ts.datetime(),  # Set time
+                        'azs': azimuth_s,  # Set azimuth
+                        'valid': valid,
+                        'uuid': satellite.transmitter,
+                        'success_rate': satellite.success_rate,
+                        'good_count': satellite.good_count,
+                        'data_count': satellite.data_count,
+                        'scheduled': False
+                    }
                     passes.append(satpass)
-                observer.date = ephem.Date(
-                    ts).datetime() + timedelta(minutes=1)
+                observer.date = ephem.Date(ts).datetime() + timedelta(minutes=1)
             else:
                 keep_digging = False
 
@@ -283,9 +271,7 @@ def get_groundstation_info(ground_station_id):
 
     # Loop
     found = False
-    r = client.get("{}/api/stations/?id={:d}".format(
-                   settings.NETWORK_BASE_URL,
-                   ground_station_id))
+    r = client.get("{}/api/stations/?id={:d}".format(settings.NETWORK_BASE_URL, ground_station_id))
     for o in r.json():
         if o['id'] == ground_station_id:
             if o['status'] == 'Online' or o['status'] == 'Testing':
@@ -312,13 +298,7 @@ def get_last_update(fname):
         return None
 
 
-def schedule_observation(
-        session,
-        norad_cat_id,
-        uuid,
-        ground_station_id,
-        starttime,
-        endtime):
+def schedule_observation(session, norad_cat_id, uuid, ground_station_id, starttime, endtime):
 
     obsURL = '{}/observations/new/'.format(settings.NETWORK_BASE_URL)  # Observation URL
     # Get the observation/new/ page to get the CSFR token

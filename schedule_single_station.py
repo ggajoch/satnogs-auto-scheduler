@@ -55,8 +55,8 @@ class satellite:
         self.data_count = data_count
 
     def __repr__(self):
-        return "%s %s %d %d %d %s" % (self.id, self.transmitter, self.success_rate,
-                                      self.good_count, self.data_count, self.name)
+        return "%s %s %d %d %d %s" % (self.id, self.transmitter, self.success_rate, self.good_count,
+                                      self.data_count, self.name)
 
 
 def _log_level_string_to_int(log_level_string):
@@ -77,27 +77,49 @@ def main():
     parser = argparse.ArgumentParser(
         description="Automatically schedule observations on a SatNOGS station.")
     parser.add_argument("-s", "--station", help="Ground station ID", type=int)
-    parser.add_argument("-t", "--starttime", help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
+    parser.add_argument("-t",
+                        "--starttime",
+                        help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
                         default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
-    parser.add_argument("-d", "--duration", help="Duration to schedule [hours; default 1.0]",
-                        type=float, default=1)
-    parser.add_argument("-m", "--min-horizon", help="Minimum horizon [default 0]", type=float,
+    parser.add_argument("-d",
+                        "--duration",
+                        help="Duration to schedule [hours; default 1.0]",
+                        type=float,
+                        default=1)
+    parser.add_argument("-m",
+                        "--min-horizon",
+                        help="Minimum horizon [default 0]",
+                        type=float,
                         default=0.)
-    parser.add_argument("-f", "--no-search-transmitters",
+    parser.add_argument("-f",
+                        "--no-search-transmitters",
                         help="Do not search good transmitters [default searching]",
-                        dest='search_transmitters', action='store_false')
+                        dest='search_transmitters',
+                        action='store_false')
     parser.set_defaults(search_transmitters=True)
-    parser.add_argument("-w", "--wait",
+    parser.add_argument("-w",
+                        "--wait",
                         help="Wait time between consecutive observations (for setup and slewing)" +
-                        " [seconds; default: 0.0]", type=float, default=0)
-    parser.add_argument("-n", "--dryrun", help="Dry run (do not schedule passes)",
+                        " [seconds; default: 0.0]",
+                        type=float,
+                        default=0)
+    parser.add_argument("-n",
+                        "--dryrun",
+                        help="Dry run (do not schedule passes)",
                         action="store_true")
-    parser.add_argument("-P", "--priorities", help="File with transmitter priorities. Should have" +
+    parser.add_argument("-P",
+                        "--priorities",
+                        help="File with transmitter priorities. Should have" +
                         "columns of the form |NORAD priority UUID| like |43017 0.9" +
                         " KgazZMKEa74VnquqXLwAvD|. Priority is fractional, one transmitter " +
-                        "per line.", default=None)
-    parser.add_argument("-l", "--log-level", default="INFO", dest="log_level",
-                        type=_log_level_string_to_int, nargs="?",
+                        "per line.",
+                        default=None)
+    parser.add_argument("-l",
+                        "--log-level",
+                        default="INFO",
+                        dest="log_level",
+                        type=_log_level_string_to_int,
+                        nargs="?",
                         help="Set the logging output level. {0}".format(_LOG_LEVEL_STRINGS))
     args = parser.parse_args()
 
@@ -172,9 +194,11 @@ def main():
 
         # Get NORAD IDs
         norad_cat_ids = sorted(
-            set([transmitter["norad_cat_id"] for transmitter in transmitters.values()
-                 if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID and
-                 transmitter["norad_cat_id"] in alive_norad_cat_ids]))
+            set([
+                transmitter["norad_cat_id"] for transmitter in transmitters.values()
+                if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID
+                and transmitter["norad_cat_id"] in alive_norad_cat_ids
+            ]))
 
         # Store transmitters
         fp = open(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id), "w")
@@ -189,12 +213,10 @@ def main():
             if transmitters[uuid]["norad_cat_id"] not in alive_norad_cat_ids:
                 continue
 
-            fp.write("%05d %s %d %d %d\n" %
-                     (transmitters[uuid]["norad_cat_id"],
-                      uuid,
-                      transmitter["stats"]["success_rate"],
-                      transmitter["stats"]["good_count"],
-                      transmitter["stats"]["total_count"]))
+            fp.write(
+                "%05d %s %d %d %d\n" %
+                (transmitters[uuid]["norad_cat_id"], uuid, transmitter["stats"]["success_rate"],
+                 transmitter["stats"]["good_count"], transmitter["stats"]["total_count"]))
 
         logging.info("Transmitter success rates received!")
         fp.close()
@@ -218,8 +240,9 @@ def main():
     # Read tles
     with open(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id), "r") as f:
         lines = f.readlines()
-        tles = [twolineelement(lines[i], lines[i + 1], lines[i + 2])
-                for i in range(0, len(lines), 3)]
+        tles = [
+            twolineelement(lines[i], lines[i + 1], lines[i + 2]) for i in range(0, len(lines), 3)
+        ]
 
     # Read transmitters
     satellites = []
@@ -231,12 +254,7 @@ def main():
                 item[0]), item[1], float(item[2]) / 100.0, int(item[3]), int(item[4])
             for tle in tles:
                 if tle.id == norad_cat_id:
-                    satellites.append(satellite(
-                        tle,
-                        uuid,
-                        success_rate,
-                        good_count,
-                        data_count))
+                    satellites.append(satellite(tle, uuid, success_rate, good_count, data_count))
 
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
@@ -273,8 +291,7 @@ def main():
                     * satpass['success_rate'] \
                     * float(satpass['good_count']) / max_good_count
             else:
-                satpass['priority'] = (
-                    float(satpass['altt']) / 90.0) * satpass['success_rate']
+                satpass['priority'] = (float(satpass['altt']) / 90.0) * satpass['success_rate']
             normalpasses.append(satpass)
 
     # Priority scheduler
@@ -302,15 +319,10 @@ def main():
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         logging.info(
             "%3d | %3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %s" %
-            (ground_station_id,
-             satpass['scheduled'],
-             int(satpass['id']),
-             satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
-             satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
-             float(satpass['altt']) if satpass['altt'] else 0.,
-             satpass['priority'],
-             satpass['uuid'],
-             satpass['name'].rstrip()))
+            (ground_station_id, satpass['scheduled'], int(
+                satpass['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
+             satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['altt']) if satpass['altt']
+             else 0., satpass['priority'], satpass['uuid'], satpass['name'].rstrip()))
         if not satpass['scheduled']:
             schedule_needed = True
 
@@ -320,8 +332,7 @@ def main():
         session = requests.session()
         login = session.get(loginUrl)  # Get login page for CSFR token
         login_html = lxml.html.fromstring(login.text)
-        login_hidden_inputs = login_html.xpath(
-            r'//form//input[@type="hidden"]')  # Get CSFR token
+        login_hidden_inputs = login_html.xpath(r'//form//input[@type="hidden"]')  # Get CSFR token
         form = {x.attrib["name"]: x.attrib["value"] for x in login_hidden_inputs}
         form["login"] = settings.NETWORK_USERNAME
         form["password"] = settings.NETWORK_PASSWORD
@@ -329,8 +340,10 @@ def main():
         # Login
         result = session.post(loginUrl,
                               data=form,
-                              headers={'referer': loginUrl,
-                                       'user-agent': 'satnogs-auto-scheduler/0.0.1'})
+                              headers={
+                                  'referer': loginUrl,
+                                  'user-agent': 'satnogs-auto-scheduler/0.0.1'
+                              })
         if result.url.endswith("/accounts/login/"):
             logging.info("Authentication failed")
         else:
@@ -342,18 +355,11 @@ def main():
         logging.info('Checking and scheduling passes as needed.')
         for satpass in tqdm(scheduledpasses_sorted):
             if not satpass['scheduled']:
-                logging.debug(
-                    "Scheduling %05d %s %s %3.0f %4.3f %s %s" %
-                    (int(satpass['id']),
-                     satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
-                     satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
-                     float(satpass['altt']),
-                     satpass['priority'],
-                     satpass['uuid'],
-                     satpass['name'].rstrip()))
-                schedule_observation(session,
-                                     int(satpass['id']),
-                                     satpass['uuid'],
+                logging.debug("Scheduling %05d %s %s %3.0f %4.3f %s %s" %
+                              (int(satpass['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
+                               satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['altt']),
+                               satpass['priority'], satpass['uuid'], satpass['name'].rstrip()))
+                schedule_observation(session, int(satpass['id']), satpass['uuid'],
                                      ground_station_id,
                                      satpass['tr'].strftime("%Y-%m-%d %H:%M:%S") + ".000",
                                      satpass['ts'].strftime("%Y-%m-%d %H:%M:%S") + ".000")
