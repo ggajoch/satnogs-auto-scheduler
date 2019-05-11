@@ -308,6 +308,7 @@ def main():
                               })
         if result.url.endswith("/accounts/login/"):
             logging.info("Authentication failed")
+            sys.exit(-1)
         else:
             logging.info("Authentication successful")
 
