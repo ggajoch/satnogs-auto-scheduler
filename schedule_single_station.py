@@ -85,10 +85,10 @@ def main():
                         "--duration",
                         help="Duration to schedule [hours; default 1.0]",
                         type=float,
-                        default=1)
+                        default=1.0)
     parser.add_argument("-m",
                         "--min-horizon",
-                        help="Minimum horizon [default 0]",
+                        help="Minimum horizon [default 0.0]",
                         type=float,
                         default=0.)
     parser.add_argument("-f",
@@ -100,9 +100,8 @@ def main():
     parser.add_argument("-w",
                         "--wait",
                         help="Wait time between consecutive observations (for setup and slewing)" +
-                        " [seconds; default: 0.0]",
+                        " [seconds; default: 0, max 3600]",
                         type=int,
-                        choices=range(0, 3600),
                         default=0)
     parser.add_argument("-n",
                         "--dryrun",
@@ -138,8 +137,16 @@ def main():
 
     # Settings
     ground_station_id = args.station
-    length_hours = args.duration
-    wait_time_seconds = args.wait
+    if args.duration>0.0:
+        length_hours = args.duration
+    else:
+        length_hours = 1.0
+    if args.wait<=0:
+        wait_time_seconds = 0
+    elif args.wait<=3600:
+        wait_time_seconds = args.wait
+    else:
+        wait_time_seconds = 3600
     min_horizon_arg = args.min_horizon
     cache_dir = "/tmp/cache"
     schedule = not args.dryrun
