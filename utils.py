@@ -7,6 +7,8 @@ import ephem
 import lxml
 import settings
 from tqdm import tqdm
+import os
+import sys
 
 
 def get_paginated_endpoint(url, max_entries=None):
@@ -27,18 +29,24 @@ def get_paginated_endpoint(url, max_entries=None):
 
 
 def read_priorities_transmitters(filename):
-    with open(filename, "r") as fp:
-        satprio = {}
-        sattrans = {}
-        lines = fp.readlines()
-        for line in lines:
-            parts = line.strip().split(" ")
-            sat = parts[0]
-            prio = parts[1]
-            transmitter = parts[2]
-            satprio[sat] = float(prio)
-            sattrans[sat] = transmitter
-    return (satprio, sattrans)
+    # Priorities and favorite transmitters
+    # read the following format
+    #   43017 1. KgazZMKEa74VnquqXLwAvD
+    if filename is not None and os.path.exists(filename):
+        with open(filename, "r") as fp:
+            satprio = {}
+            sattrans = {}
+            lines = fp.readlines()
+            for line in lines:
+                parts = line.strip().split(" ")
+                sat = parts[0]
+                prio = parts[1]
+                transmitter = parts[2]
+                satprio[sat] = float(prio)
+                sattrans[sat] = transmitter
+        return (satprio, sattrans)
+    else:
+        return ({}, {})
 
 
 def get_satellite_info():
@@ -264,6 +272,30 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
     return passes
 
 
+def get_priority_passes(passes, priorities, favorite_transmitters, search):
+    priority = []
+    normal = []
+    for satpass in passes:
+        # Get user defined priorities
+        if satpass['id'] in priorities:
+            satpass['priority'] = priorities[satpass['id']]
+            if satpass['id'] in favorite_transmitters:
+                satpass['uuid'] = favorite_transmitters[satpass['id']]
+            priority.append(satpass)
+        elif search:
+            # Find satellite transmitter with highest number of good observations
+            max_good_count = max([s['good_count'] for s in passes if s["id"] == satpass["id"]])
+            if max_good_count > 0:
+                satpass['priority'] = \
+                    (float(satpass['altt']) / 90.0) \
+                    * satpass['success_rate'] \
+                    * float(satpass['good_count']) / max_good_count
+            else:
+                satpass['priority'] = (float(satpass['altt']) / 90.0) * satpass['success_rate']
+            normal.append(satpass)
+    return (priority, normal)
+
+
 def get_groundstation_info(ground_station_id):
 
     logging.info("Requesting information for ground station %d" % ground_station_id)
@@ -285,7 +317,8 @@ def get_groundstation_info(ground_station_id):
         return o
     else:
         logging.info('No ground station information found!')
-        return {}
+        # Exit if no ground station found
+        sys.exit()
 
 
 def get_last_update(fname):
@@ -296,6 +329,19 @@ def get_last_update(fname):
         return datetime.strptime(line.strip(), "%Y-%m-%dT%H:%M:%S")
     except IOError:
         return None
+
+
+def update_needed(tnow, ground_station_id, cache_dir):
+    # Get last update
+    tlast = get_last_update(os.path.join(cache_dir, "last_update_%d.txt" % ground_station_id))
+
+    if tlast is None or (tnow - tlast).total_seconds() > settings.CACHE_AGE * 3600:
+        return True
+    if not os.path.isfile(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id)):
+        return True
+    if not os.path.isfile(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id)):
+        return True
+    return False
 
 
 def schedule_observation(session, norad_cat_id, uuid, ground_station_id, starttime, endtime):

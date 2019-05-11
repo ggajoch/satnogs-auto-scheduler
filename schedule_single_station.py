@@ -9,9 +9,9 @@ import lxml.html
 import argparse
 import logging
 from utils import get_active_transmitter_info, get_transmitter_stats, \
-    get_groundstation_info, get_last_update, get_scheduled_passes_from_network, ordered_scheduler, \
+    get_groundstation_info, get_scheduled_passes_from_network, ordered_scheduler, \
     efficiency, find_passes, schedule_observation, read_priorities_transmitters, \
-    get_satellite_info
+    get_satellite_info, update_needed, get_priority_passes
 import settings
 from tqdm import tqdm
 import sys
@@ -101,7 +101,8 @@ def main():
                         "--wait",
                         help="Wait time between consecutive observations (for setup and slewing)" +
                         " [seconds; default: 0.0]",
-                        type=float,
+                        type=int,
+                        choices=range(0, 3600),
                         default=0)
     parser.add_argument("-n",
                         "--dryrun",
@@ -140,8 +141,6 @@ def main():
     length_hours = args.duration
     wait_time_seconds = args.wait
     min_horizon_arg = args.min_horizon
-    if wait_time_seconds < 0:
-        wait_time_seconds = 0.0
     cache_dir = "/tmp/cache"
     schedule = not args.dryrun
     search_transmitters = args.search_transmitters
@@ -155,25 +154,12 @@ def main():
     # Get ground station information
     ground_station = get_groundstation_info(ground_station_id)
 
-    # Exit if ground station is empty
-    if not ground_station:
-        sys.exit()
-
     # Create cache
     if not os.path.isdir(cache_dir):
         os.mkdir(cache_dir)
 
-    # Get last update
-    tlast = get_last_update(os.path.join(cache_dir, "last_update_%d.txt" % ground_station_id))
-
     # Update logic
-    update = False
-    if tlast is None or (tnow - tlast).total_seconds() > settings.CACHE_AGE * 3600:
-        update = True
-    if not os.path.isfile(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id)):
-        update = True
-    if not os.path.isfile(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id)):
-        update = True
+    update = update_needed(tnow, ground_station_id, cache_dir)
 
     # Update
     if update:
@@ -259,13 +245,7 @@ def main():
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
 
-    # Priorities and favorite transmitters
-    # read the following format
-    #   43017 1. KgazZMKEa74VnquqXLwAvD
-    if priority_filename is not None and os.path.exists(priority_filename):
-        priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
-    else:
-        priorities, favorite_transmitters = {}, {}
+    priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
 
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
@@ -273,26 +253,8 @@ def main():
                  (len(scheduledpasses), tmin, tmax, ground_station_id))
 
     # Get passes of priority objects
-    prioritypasses = []
-    normalpasses = []
-    for satpass in passes:
-        # Get user defined priorities
-        if satpass['id'] in priorities:
-            satpass['priority'] = priorities[satpass['id']]
-            if satpass['id'] in favorite_transmitters:
-                satpass['uuid'] = favorite_transmitters[satpass['id']]
-            prioritypasses.append(satpass)
-        elif search_transmitters:
-            # Find satellite transmitter with highest number of good observations
-            max_good_count = max([s['good_count'] for s in passes if s["id"] == satpass["id"]])
-            if max_good_count > 0:
-                satpass['priority'] = \
-                    (float(satpass['altt']) / 90.0) \
-                    * satpass['success_rate'] \
-                    * float(satpass['good_count']) / max_good_count
-            else:
-                satpass['priority'] = (float(satpass['altt']) / 90.0) * satpass['success_rate']
-            normalpasses.append(satpass)
+    prioritypasses, normalpasses = get_priority_passes(passes, priorities, favorite_transmitters,
+                                                       search_transmitters)
 
     # Priority scheduler
     prioritypasses = sorted(prioritypasses, key=lambda satpass: -satpass['priority'])
@@ -306,7 +268,7 @@ def main():
 
     # Compute scheduling efficiency
     dt, dttot, eff = efficiency(scheduledpasses)
-    logging.info("%d passes scheduled out of %d, %.0f s out of %.0f s at %.3f%% efficiency" %
+    logging.info("%d passes selected out of %d, %.0f s out of %.0f s at %.3f%% efficiency" %
                  (len(scheduledpasses), len(passes), dt, dttot, 100 * eff))
 
     # Find unique objects
