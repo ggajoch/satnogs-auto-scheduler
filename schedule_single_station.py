@@ -10,7 +10,7 @@ import argparse
 import logging
 from utils import get_active_transmitter_info, get_transmitter_stats, \
     get_groundstation_info, get_scheduled_passes_from_network, ordered_scheduler, \
-    efficiency, find_passes, schedule_observation, read_priorities_transmitters, \
+    report_efficiency, find_passes, schedule_observation, read_priorities_transmitters, \
     get_satellite_info, update_needed, get_priority_passes
 import settings
 from tqdm import tqdm
@@ -91,6 +91,10 @@ def main():
                         help="Minimum horizon [default 0.0]",
                         type=float,
                         default=0.)
+    parser.add_argument("-z",
+                        "--horizon",
+                        help="Don't respect station horizon (schedule 0 to 0 elevation)",
+                        action="store_true")
     parser.add_argument("-f",
                         "--no-search-transmitters",
                         help="Do not search good transmitters [default searching]",
@@ -137,13 +141,13 @@ def main():
 
     # Settings
     ground_station_id = args.station
-    if args.duration>0.0:
+    if args.duration > 0.0:
         length_hours = args.duration
     else:
         length_hours = 1.0
-    if args.wait<=0:
+    if args.wait <= 0:
         wait_time_seconds = 0
-    elif args.wait<=3600:
+    elif args.wait <= 3600:
         wait_time_seconds = args.wait
     else:
         wait_time_seconds = 3600
@@ -189,8 +193,8 @@ def main():
         norad_cat_ids = sorted(
             set([
                 transmitter["norad_cat_id"] for transmitter in transmitters.values()
-                if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID
-                and transmitter["norad_cat_id"] in alive_norad_cat_ids
+                if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID and
+                transmitter["norad_cat_id"] in alive_norad_cat_ids
             ]))
 
         # Store transmitters
@@ -228,7 +232,10 @@ def main():
     observer.lon = str(ground_station['lng'])
     observer.lat = str(ground_station['lat'])
     observer.elevation = ground_station['altitude']
+    if not args.horizon:
+        observer.horizon = str(ground_station['min_horizon'])
     minimum_altitude = max(ground_station['min_horizon'], min_horizon_arg)
+    min_pass_duration = settings.MIN_PASS_DURATION
 
     # Read tles
     with open(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id), "r") as f:
@@ -250,7 +257,7 @@ def main():
                     satellites.append(satellite(tle, uuid, success_rate, good_count, data_count))
 
     # Find passes
-    passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude)
+    passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_duration)
 
     priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
 
@@ -273,10 +280,8 @@ def main():
     normalpasses = sorted(normalpasses, key=lambda satpass: -satpass['priority'])
     scheduledpasses = ordered_scheduler(normalpasses, scheduledpasses, wait_time_seconds)
 
-    # Compute scheduling efficiency
-    dt, dttot, eff = efficiency(scheduledpasses)
-    logging.info("%d passes selected out of %d, %.0f s out of %.0f s at %.3f%% efficiency" %
-                 (len(scheduledpasses), len(passes), dt, dttot, 100 * eff))
+    # Report scheduling efficiency
+    report_efficiency(scheduledpasses, passes)
 
     # Find unique objects
     satids = sorted(set([satpass['id'] for satpass in passes]))

@@ -150,20 +150,24 @@ def overlap(satpass, scheduledpasses, wait_time_seconds):
     # Loop over scheduled passes
     for scheduledpass in scheduledpasses:
         # Test pass falls within scheduled pass
-        if tr >= scheduledpass['tr'] and ts < scheduledpass['ts'] + timedelta(seconds=wait_time_seconds):
+        if tr >= scheduledpass['tr'] and ts < scheduledpass['ts'] + timedelta(
+                seconds=wait_time_seconds):
             overlap = True
         # Scheduled pass falls within test pass
-        elif scheduledpass['tr'] >= tr and scheduledpass['ts'] + timedelta(seconds=wait_time_seconds) < ts:
+        elif scheduledpass['tr'] >= tr and scheduledpass['ts'] + timedelta(
+                seconds=wait_time_seconds) < ts:
             overlap = True
         # Pass start falls within pass
-        elif tr >= scheduledpass['tr'] and tr < scheduledpass['ts'] + timedelta(seconds=wait_time_seconds):
+        elif tr >= scheduledpass['tr'] and tr < scheduledpass['ts'] + timedelta(
+                seconds=wait_time_seconds):
             overlap = True
         # Pass end falls within end
-        elif ts >= scheduledpass['tr'] and ts < scheduledpass['ts'] + timedelta(seconds=wait_time_seconds):
+        elif ts >= scheduledpass['tr'] and ts < scheduledpass['ts'] + timedelta(
+                seconds=wait_time_seconds):
             overlap = True
         if overlap:
             break
-        
+
     return overlap
 
 
@@ -186,29 +190,34 @@ def random_scheduler(passes, scheduledpasses, wait_time_seconds):
     return ordered_scheduler(passes, scheduledpasses, wait_time_seconds)
 
 
-def efficiency(passes):
-
-    # Loop over passes
-    start = False
-    for satpass in passes:
-        if not start:
-            dt = satpass['ts'] - satpass['tr']
-            tmin = satpass['tr']
-            tmax = satpass['ts']
-            start = True
-        else:
-            dt += satpass['ts'] - satpass['tr']
-            if satpass['tr'] < tmin:
+def report_efficiency(scheduledpasses, passes):
+    if scheduledpasses:
+        # Loop over passes
+        start = False
+        for satpass in scheduledpasses:
+            if not start:
+                dt = satpass['ts'] - satpass['tr']
                 tmin = satpass['tr']
-            if satpass['ts'] > tmax:
                 tmax = satpass['ts']
-    # Total time covered
-    dttot = tmax - tmin
+                start = True
+            else:
+                dt += satpass['ts'] - satpass['tr']
+                if satpass['tr'] < tmin:
+                    tmin = satpass['tr']
+                if satpass['ts'] > tmax:
+                    tmax = satpass['ts']
+        # Total time covered
+        dttot = tmax - tmin
 
-    return dt.total_seconds(), dttot.total_seconds(), dt.total_seconds() / dttot.total_seconds()
+        logging.info("%d passes selected out of %d, %.0f s out of %.0f s at %.3f%% efficiency" %
+                     (len(scheduledpasses), len(passes), dt.total_seconds(), dttot.total_seconds(),
+                      100 * dt.total_seconds() / dttot.total_seconds()))
+
+    else:
+        logging.info("No appropriate passes found for scheduling.")
 
 
-def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
+def find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_duration):
     # Loop over satellites
     passes = []
     passid = 0
@@ -226,6 +235,7 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
         # Loop over passes
         keep_digging = True
         while keep_digging:
+            sat_ephem.compute(observer)
             try:
                 tr, azr, tt, altt, ts, azs = observer.next_pass(sat_ephem)
             except ValueError:
@@ -248,13 +258,21 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude):
                 break
             passid += 1
 
-            # show only if >= configured horizon and in next 6 hours,
+            pass_duration = (ts.datetime() - tr.datetime()) / timedelta(minutes=1)
+
+            # show only if >= configured horizon and till tmax,
             # and not directly overhead (tr < ts see issue 199)
+
             if tr < ephem.date(tmax):
-                if (float(elevation) >= minimum_altitude and tr < ts):
+                if (float(elevation) >= minimum_altitude and tr < ts and
+                        pass_duration > min_pass_duration):
                     valid = True
+
+                    # invalidate passes that start too soon
                     if tr < ephem.Date(datetime.now() + timedelta(minutes=5)):
                         valid = False
+
+                    # get pass information
                     satpass = {
                         'passid': passid,
                         'mytime': str(observer.date),
@@ -312,8 +330,8 @@ def get_groundstation_info(ground_station_id):
     logging.info("Requesting information for ground station %d" % ground_station_id)
 
     # Loop
-    found = False
-    r = requests.get("{}/api/stations/?id={:d}".format(settings.NETWORK_BASE_URL, ground_station_id))
+    r = requests.get("{}/api/stations/?id={:d}".format(settings.NETWORK_BASE_URL,
+                                                       ground_station_id))
 
     selected_stations = list(filter(lambda s: s['id'] == ground_station_id, r.json()))
 
@@ -328,7 +346,7 @@ def get_groundstation_info(ground_station_id):
     if station['status'] == 'Online' or station['status'] == 'Testing':
         return station
     else:
-        logging.info("Ground station {} neither in 'online' nor in 'testing' mode, " \
+        logging.info("Ground station {} neither in 'online' nor in 'testing' mode, "
                      "can't schedule!".format(ground_station_id))
         return {}
 
