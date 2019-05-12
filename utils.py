@@ -258,14 +258,14 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_dur
                 break
             passid += 1
 
-            pass_duration = (ts.datetime() - tr.datetime()) / timedelta(minutes=1)
+            pass_duration = ts.datetime() - tr.datetime()
 
             # show only if >= configured horizon and till tmax,
             # and not directly overhead (tr < ts see issue 199)
 
             if tr < ephem.date(tmax):
                 if (float(elevation) >= minimum_altitude and tr < ts and
-                        pass_duration > min_pass_duration):
+                        pass_duration > timedelta(minutes=min_pass_duration)):
                     valid = True
 
                     # invalidate passes that start too soon
