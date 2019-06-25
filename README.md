@@ -15,6 +15,20 @@ pip install -r requirements.txt
 
 Copy the env-dist file to .env and set your legacy SatNOGS Network credentials.
 
+## Test run
+
+Perform a test run to download orbital elements and transmitter priorities (these are stored in `/tmp/cache`) with
+
+```bash
+schedule_single_station.py -s <ground station ID> -n
+```
+
+The `-n` option computes the passes but does not schedule them. To schedule these passes, run
+
+```bash
+schedule_single_station.py -s <ground station ID>
+```
+
 ## Setup priority scheduling
 
 The following commands will add a list consisting of all DUV, BPSK1k2, BPSK9k6, [G]MSK and [G]FSK transmitters into `priorities_37.txt`.
@@ -28,7 +42,7 @@ awk '{if ($3>=80) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "MSK" | a
 sort -n -k 4 /tmp/cache/transmitters_37.txt | grep -e "DUV" | awk '{printf("%s 1.0 %s\n",$1,$2)} >> priorities_37.txt'
 ```
 
-## Add ad cron-job
+## Add cron-job
 
 Start editing your default user's cron (select your preferred editor):
 ```bash
