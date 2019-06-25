@@ -164,7 +164,9 @@ def main():
 
     # Get ground station information
     ground_station = get_groundstation_info(ground_station_id)
-
+    if not ground_station:
+        sys.exit()
+    
     # Create cache
     if not os.path.isdir(cache_dir):
         os.mkdir(cache_dir)
