@@ -232,9 +232,9 @@ def main():
     observer.lon = str(ground_station['lng'])
     observer.lat = str(ground_station['lat'])
     observer.elevation = ground_station['altitude']
-    if not args.horizon:
-        observer.horizon = str(ground_station['min_horizon'])
     minimum_altitude = max(ground_station['min_horizon'], min_horizon_arg)
+    if not args.horizon:
+        observer.horizon = str(minimum_altitude)
     min_pass_duration = settings.MIN_PASS_DURATION
 
     # Read tles
