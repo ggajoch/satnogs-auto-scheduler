@@ -211,9 +211,9 @@ def main():
                 continue
 
             fp.write(
-                "%05d %s %d %d %d\n" %
+                "%05d %s %d %d %d %s\n" %
                 (transmitters[uuid]["norad_cat_id"], uuid, transmitter["stats"]["success_rate"],
-                 transmitter["stats"]["good_count"], transmitter["stats"]["total_count"]))
+                 transmitter["stats"]["good_count"], transmitter["stats"]["total_count"], transmitters[uuid]["mode"]))
 
         logging.info("Transmitter success rates received!")
         fp.close()

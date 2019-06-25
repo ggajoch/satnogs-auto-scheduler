@@ -38,6 +38,8 @@ def read_priorities_transmitters(filename):
             sattrans = {}
             lines = fp.readlines()
             for line in lines:
+                if line[0]=="#":
+                    continue
                 parts = line.strip().split(" ")
                 sat = parts[0]
                 prio = parts[1]
@@ -75,7 +77,7 @@ def get_active_transmitter_info(fmin, fmax):
     for o in r.json():
         if o["downlink_low"]:
             if o["status"] == "active" and o["downlink_low"] > fmin and o["downlink_low"] <= fmax:
-                transmitter = {"norad_cat_id": o["norad_cat_id"], "uuid": o["uuid"]}
+                transmitter = {"norad_cat_id": o["norad_cat_id"], "uuid": o["uuid"], "mode": o["mode"]}
                 transmitters.append(transmitter)
     logging.info("Transmitters filtered based on ground station capability.")
     return transmitters
