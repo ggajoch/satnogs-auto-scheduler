@@ -32,14 +32,14 @@ schedule_single_station.py -s <ground station ID>
 ## Setup priority scheduling
 
 The following commands will add a list consisting of all DUV, BPSK1k2, BPSK9k6, [G]MSK and [G]FSK transmitters into `priorities_37.txt`.
-Please change the station id (here `37` - in the cache file and the list file name) to your correspending one!
+Please change the station id (here `37` - in the cache file and the list file name) to your corresponding one!
 
 ```bash
-awk '{if ($3>=80) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "FSK" | awk '{printf("%s 1.0 %s\n",$1,$2)} > priorities_37.txt'
-awk '{if ($3>=0) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "BPSK1k2" | awk '{printf("%s 1.0 %s\n",$1,$2)} >> priorities_37.txt'
-awk '{if ($3>=0) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "BPSK9k6" | awk '{printf("%s 1.0 %s\n",$1,$2)} >> priorities_37.txt'
-awk '{if ($3>=80) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "MSK" | awk '{printf("%s 1.0 %s\n",$1,$2)} >> priorities_37.txt'
-sort -n -k 4 /tmp/cache/transmitters_37.txt | grep -e "DUV" | awk '{printf("%s 1.0 %s\n",$1,$2)} >> priorities_37.txt'
+awk '{if ($3>=80) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "FSK" | awk '{printf("%s 1.0 %s\n",$1,$2)}' > priorities_37.txt
+awk '{if ($3>=0) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "BPSK1k2" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> priorities_37.txt
+awk '{if ($3>=0) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "BPSK9k6" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> priorities_37.txt
+awk '{if ($3>=80) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "MSK" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> priorities_37.txt
+sort -n -k 4 /tmp/cache/transmitters_37.txt | grep -e "DUV" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> priorities_37.txt
 ```
 
 ## Add cron-job
@@ -54,8 +54,8 @@ Add a line like this - execute the scheduling script on each full hour:
 0 */1 * * * <path_to_auto_scheduler>/schedule_single_station.py -s <station_id> -d 1.2 -P <path_to_priority_list>/<priority_file>.txt -f -z
 ```
 
-Omit the `-f` option to also fill in the gaps, but be aware if using a rotator setup! This will wear-out your Rotator very quickly!
-Add `-w 60` for a delay if you want to give your rotator a a bit of time (60 s) to reset or home.
+Omit the `-f` option to also fill in the gaps, but be aware if using a rotator setup! This will wear-out your rotator very quickly!
+Add `-w 60` for a delay if you want to give your rotator a bit of time (60 s) to reset or home.
 
 
 ## Usage
