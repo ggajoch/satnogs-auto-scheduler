@@ -97,11 +97,11 @@ def main():
                         help="Don't respect station horizon (schedule 0 to 0 elevation)",
                         action="store_true")
     parser.add_argument("-f",
-                        "--no-search-transmitters",
-                        help="Do not search good transmitters [default searching]",
-                        dest='search_transmitters',
+                        "--only-priority",
+                        help="Schedule only priority satellites (from -P file)",
+                        dest='only_priority',
                         action='store_false')
-    parser.set_defaults(search_transmitters=True)
+    parser.set_defaults(only_priority=True)
     parser.add_argument("-w",
                         "--wait",
                         help="Wait time between consecutive observations (for setup and slewing)" +
@@ -172,7 +172,7 @@ def main():
         min_horizon_arg = args.min_horizon
     cache_dir = "/tmp/cache"
     schedule = not args.dryrun
-    search_transmitters = args.search_transmitters
+    only_priority = args.only_priority
     priority_filename = args.priorities
 
     # Set time range
@@ -288,7 +288,7 @@ def main():
 
     # Get passes of priority objects
     prioritypasses, normalpasses = get_priority_passes(passes, priorities, favorite_transmitters,
-                                                       search_transmitters, min_priority)
+                                                       only_priority, min_priority)
 
     # Priority scheduler
     prioritypasses = sorted(prioritypasses, key=lambda satpass: -satpass['priority'])

@@ -305,7 +305,7 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_dur
     return passes
 
 
-def get_priority_passes(passes, priorities, favorite_transmitters, search, min_priority):
+def get_priority_passes(passes, priorities, favorite_transmitters, only_priority, min_priority):
     priority = []
     normal = []
     for satpass in passes:
@@ -317,7 +317,7 @@ def get_priority_passes(passes, priorities, favorite_transmitters, search, min_p
             # Add if priority is high enough
             if satpass['priority'] >= min_priority:
                 priority.append(satpass)
-        elif search:
+        elif only_priority:
             # Find satellite transmitter with highest number of good observations
             max_good_count = max([s['good_count'] for s in passes if s["id"] == satpass["id"]])
             if max_good_count > 0:
