@@ -41,7 +41,7 @@ class twolineelement:
 class satellite:
     """Satellite class"""
 
-    def __init__(self, tle, transmitter, success_rate, good_count, data_count):
+    def __init__(self, tle, transmitter, success_rate, good_count, data_count, mode):
         """Define a satellite"""
 
         self.tle0 = tle.tle0
@@ -53,7 +53,8 @@ class satellite:
         self.success_rate = success_rate
         self.good_count = good_count
         self.data_count = data_count
-
+        self.mode = mode
+        
     def __repr__(self):
         return "%s %s %d %d %d %s" % (self.id, self.transmitter, self.success_rate, self.good_count,
                                       self.data_count, self.name)
@@ -252,11 +253,11 @@ def main():
         lines = f.readlines()
         for line in lines:
             item = line.split()
-            norad_cat_id, uuid, success_rate, good_count, data_count = int(
-                item[0]), item[1], float(item[2]) / 100.0, int(item[3]), int(item[4])
+            norad_cat_id, uuid, success_rate, good_count, data_count, mode = int(
+                item[0]), item[1], float(item[2]) / 100.0, int(item[3]), int(item[4]), item[5]
             for tle in tles:
                 if tle.id == norad_cat_id:
-                    satellites.append(satellite(tle, uuid, success_rate, good_count, data_count))
+                    satellites.append(satellite(tle, uuid, success_rate, good_count, data_count, mode))
 
     # Find passes
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_duration)
@@ -294,11 +295,11 @@ def main():
                  "Priority | Transmitter UUID       | Satellite name ")
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         logging.info(
-            "%3d | %3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %s" %
+            "%3d | %3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %-10s | %s" %
             (ground_station_id, satpass['scheduled'], int(
                 satpass['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
              satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['altt']) if satpass['altt']
-             else 0., satpass['priority'], satpass['uuid'], satpass['name'].rstrip()))
+             else 0., satpass['priority'], satpass['uuid'], satpass['mode'], satpass['name'].rstrip()))
         if not satpass['scheduled']:
             schedule_needed = True
 

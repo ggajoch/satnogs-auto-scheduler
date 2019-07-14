@@ -125,7 +125,8 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
                 "altt": o['max_altitude'],
                 "priority": 1,
                 "uuid": o['transmitter'],
-                "name": ''
+                "name": '',
+                "mode": ''
             }
 
             if satpass['ts'] > tmin and satpass['tr'] < tmax:
@@ -293,6 +294,7 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_dur
                         'success_rate': satellite.success_rate,
                         'good_count': satellite.good_count,
                         'data_count': satellite.data_count,
+                        'mode': satellite.mode,
                         'scheduled': False
                     }
                     passes.append(satpass)
