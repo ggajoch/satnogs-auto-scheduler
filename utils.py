@@ -305,7 +305,7 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_dur
     return passes
 
 
-def get_priority_passes(passes, priorities, favorite_transmitters, search):
+def get_priority_passes(passes, priorities, favorite_transmitters, search, min_priority):
     priority = []
     normal = []
     for satpass in passes:
@@ -325,9 +325,11 @@ def get_priority_passes(passes, priorities, favorite_transmitters, search):
                     * float(satpass['good_count']) / max_good_count
             else:
                 satpass['priority'] = (float(satpass['altt']) / 90.0) * satpass['success_rate']
-            normal.append(satpass)
-    return (priority, normal)
 
+            # Add if priority is high enough
+            if satpass['priority'] >= min_priority:
+                normal.append(satpass)
+    return (priority, normal)
 
 def get_groundstation_info(ground_station_id):
 

@@ -84,12 +84,12 @@ def main():
                         default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
     parser.add_argument("-d",
                         "--duration",
-                        help="Duration to schedule [hours; default 1.0]",
+                        help="Duration to schedule [hours; default: 1.0]",
                         type=float,
                         default=1.0)
     parser.add_argument("-m",
                         "--min-horizon",
-                        help="Minimum horizon [default 0.0]",
+                        help="Minimum horizon [degrees; default: 0, maximum: 90]",
                         type=float,
                         default=0.)
     parser.add_argument("-z",
@@ -105,7 +105,7 @@ def main():
     parser.add_argument("-w",
                         "--wait",
                         help="Wait time between consecutive observations (for setup and slewing)" +
-                        " [seconds; default: 0, max 3600]",
+                        " [seconds; default: 0, maximum: 3600]",
                         type=int,
                         default=0)
     parser.add_argument("-n",
@@ -119,6 +119,12 @@ def main():
                         " KgazZMKEa74VnquqXLwAvD|. Priority is fractional, one transmitter " +
                         "per line.",
                         default=None)
+    parser.add_argument("-M",
+                        "--min-priority",
+                        help="Minimum priority. Only schedule passes with a priority higher" +
+                        "than this limit [default: 0.0, maximum: 1.0]",
+                        type=float,
+                        default=0.)
     parser.add_argument("-l",
                         "--log-level",
                         default="INFO",
@@ -152,7 +158,18 @@ def main():
         wait_time_seconds = args.wait
     else:
         wait_time_seconds = 3600
-    min_horizon_arg = args.min_horizon
+    if args.min_priority < 0.0:
+        min_priority = 0.0
+    elif args.min_priority > 1.0:
+        min_priority = 1.0
+    else:
+        min_priority = args.min_priority
+    if args.min_horizon < 0.0:
+        min_horizon_arg = 0.0
+    elif args.min_horizon > 90.0:
+        min_horizon_arg = 90.0
+    else:
+        min_horizon_arg = args.min_horizon
     cache_dir = "/tmp/cache"
     schedule = not args.dryrun
     search_transmitters = args.search_transmitters
@@ -271,7 +288,7 @@ def main():
 
     # Get passes of priority objects
     prioritypasses, normalpasses = get_priority_passes(passes, priorities, favorite_transmitters,
-                                                       search_transmitters)
+                                                       search_transmitters, min_priority)
 
     # Priority scheduler
     prioritypasses = sorted(prioritypasses, key=lambda satpass: -satpass['priority'])
