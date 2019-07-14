@@ -56,8 +56,8 @@ class satellite:
         self.mode = mode
         
     def __repr__(self):
-        return "%s %s %d %d %d %s" % (self.id, self.transmitter, self.success_rate, self.good_count,
-                                      self.data_count, self.name)
+        return "%s %s %d %d %d %s %s" % (self.id, self.transmitter, self.success_rate, self.good_count,
+                                         self.data_count, self.mode, self.name)
 
 
 def _log_level_string_to_int(log_level_string):
@@ -280,7 +280,7 @@ def main():
     passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_duration)
 
     priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
-
+    
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
     logging.info("Found %d scheduled passes between %s and %s on ground station %d" %
@@ -309,7 +309,7 @@ def main():
     schedule_needed = False
 
     logging.info("GS  | Sch | NORAD | Start time          | End time            |  El | " +
-                 "Priority | Transmitter UUID       | Satellite name ")
+                 "Priority | Transmitter UUID       | Mode       | Satellite name ")
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         logging.info(
             "%3d | %3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %-10s | %s" %
