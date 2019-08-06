@@ -89,9 +89,9 @@ def main():
                         default=1.0)
     parser.add_argument("-m",
                         "--min-horizon",
-                        help="Minimum horizon [degrees; default: 0, maximum: 90]",
+                        help="Minimum horizon [degrees; ground station default, minimum: 0, maximum: 90]",
                         type=float,
-                        default=0.)
+                        default=None)
     parser.add_argument("-z",
                         "--horizon",
                         help="Don't respect station horizon (schedule 0 to 0 elevation)",
@@ -164,12 +164,6 @@ def main():
         min_priority = 1.0
     else:
         min_priority = args.min_priority
-    if args.min_horizon < 0.0:
-        min_horizon_arg = 0.0
-    elif args.min_horizon > 90.0:
-        min_horizon_arg = 90.0
-    else:
-        min_horizon_arg = args.min_horizon
     cache_dir = "/tmp/cache"
     schedule = not args.dryrun
     only_priority = args.only_priority
@@ -252,9 +246,23 @@ def main():
     observer.lon = str(ground_station['lng'])
     observer.lat = str(ground_station['lat'])
     observer.elevation = ground_station['altitude']
-    minimum_altitude = min(ground_station['min_horizon'], min_horizon_arg)
+
+    # Set minimum altitude for pass elevation
+    if args.min_horizon is None:
+        minimum_altitude = ground_station['min_horizon']
+    else:
+        if args.min_horizon < 0.0:
+            minimum_altitude = 0.0
+        elif args.min_horizon > 90.0:
+            minimum_altitude = 90.0
+        else:
+            minimum_altitude = args.min_horizon
+
+    # Use minimum altitude for computing rise and set times (horizon to horizon otherwise)
     if not args.horizon:
         observer.horizon = str(minimum_altitude)
+
+    # Minimum duration of a pass
     min_pass_duration = settings.MIN_PASS_DURATION
 
     # Read tles
