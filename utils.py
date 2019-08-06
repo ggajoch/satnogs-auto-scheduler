@@ -335,7 +335,7 @@ def get_priority_passes(passes, priorities, favorite_transmitters, only_priority
                 normal.append(satpass)
     return (priority, normal)
 
-def get_groundstation_info(ground_station_id):
+def get_groundstation_info(ground_station_id, allow_testing):
 
     logging.info("Requesting information for ground station %d" % ground_station_id)
 
@@ -353,11 +353,15 @@ def get_groundstation_info(ground_station_id):
     logging.info('Ground station information retrieved!')
     station = selected_stations[0]
 
-    if station['status'] == 'Online' or station['status'] == 'Testing':
+    if station['status'] == 'Online' or (station['status'] == 'Testing' and allow_testing):
         return station
     else:
-        logging.info("Ground station {} neither in 'online' nor in 'testing' mode, "
-                     "can't schedule!".format(ground_station_id))
+        if station['status'] == 'Testing' and not allow_testing:
+            logging.info("Ground station {} is in testing mode but auto-scheduling is not "
+                         "allowed. Use -T command line argument to enable scheduling.".format(ground_station_id))
+        else:
+            logging.info("Ground station {} neither in 'online' nor in 'testing' mode, "
+                         "can't schedule!".format(ground_station_id))
         return {}
 
 

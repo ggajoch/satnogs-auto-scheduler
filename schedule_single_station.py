@@ -125,6 +125,11 @@ def main():
                         "than this limit [default: 0.0, maximum: 1.0]",
                         type=float,
                         default=0.)
+    parser.add_argument("-T",
+                        "--allow-testing",
+                        help="Allow scheduling on stations which are in testing mode [default: False]",
+                        action="store_true")
+    parser.set_defaults(allow_testing=False)    
     parser.add_argument("-l",
                         "--log-level",
                         default="INFO",
@@ -175,7 +180,7 @@ def main():
     tmax = tnow + timedelta(hours=length_hours)
 
     # Get ground station information
-    ground_station = get_groundstation_info(ground_station_id)
+    ground_station = get_groundstation_info(ground_station_id, args.allow_testing)
     if not ground_station:
         sys.exit()
     
