@@ -88,13 +88,18 @@ def main():
                         type=float,
                         default=1.0)
     parser.add_argument("-m",
-                        "--min-horizon",
-                        help="Minimum horizon [degrees; ground station default, minimum: 0, maximum: 90]",
+                        "--min-culmination",
+                        help="Minimum culmination elevation [degrees; ground station default, minimum: 0, maximum: 90]",
+                        type=float,
+                        default=None)
+    parser.add_argument("-r",
+                        "--min-riseset",
+                        help="Minimum rise/set elevation [degrees; ground station default, minimum: 0, maximum: 90]",
                         type=float,
                         default=None)
     parser.add_argument("-z",
                         "--horizon",
-                        help="Don't respect station horizon (schedule 0 to 0 elevation)",
+                        help="Force rise/set elevation to 0 degrees (overrided -r).",
                         action="store_true")
     parser.add_argument("-f",
                         "--only-priority",
@@ -252,20 +257,31 @@ def main():
     observer.lat = str(ground_station['lat'])
     observer.elevation = ground_station['altitude']
 
-    # Set minimum altitude for pass elevation
-    if args.min_horizon is None:
-        minimum_altitude = ground_station['min_horizon']
+    # Set minimum culmination elevation
+    if args.min_culmination is None:
+        min_culmination = ground_station['min_horizon']
     else:
-        if args.min_horizon < 0.0:
-            minimum_altitude = 0.0
-        elif args.min_horizon > 90.0:
-            minimum_altitude = 90.0
+        if args.min_culmination < 0.0:
+            min_culmination = 0.0
+        elif args.min_culmination > 90.0:
+            min_culmination = 90.0
         else:
-            minimum_altitude = args.min_horizon
+            min_culmination = args.min_culmination
 
+    # Set minimum rise/set elevation
+    if args.min_riseset is None:
+        min_riseset = ground_station['min_horizon']
+    else:
+        if args.min_riseset < 0.0:
+            min_riseset = 0.0
+        elif args.min_riseset > 90.0:
+            min_riseset = 90.0
+        else:
+            min_riseset = args.min_riseset
+            
     # Use minimum altitude for computing rise and set times (horizon to horizon otherwise)
     if not args.horizon:
-        observer.horizon = str(minimum_altitude)
+        observer.horizon = str(min_riseset)
 
     # Minimum duration of a pass
     min_pass_duration = settings.MIN_PASS_DURATION
@@ -290,7 +306,7 @@ def main():
                     satellites.append(satellite(tle, uuid, success_rate, good_count, data_count, mode))
 
     # Find passes
-    passes = find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_duration)
+    passes = find_passes(satellites, observer, tmin, tmax, min_culmination, min_pass_duration)
 
     priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
     
