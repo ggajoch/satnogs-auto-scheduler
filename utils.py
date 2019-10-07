@@ -396,13 +396,11 @@ def schedule_observation(session, norad_cat_id, uuid, ground_station_id, startti
     obs_html = lxml.html.fromstring(obs.text)
     hidden_inputs = obs_html.xpath(r'//form//input[@type="hidden"]')
     form = {x.attrib["name"]: x.attrib["value"] for x in hidden_inputs}
-    form["satellite"] = norad_cat_id
-    form["transmitter"] = uuid
-    form["start-time"] = starttime
-    form["end-time"] = endtime
-    form["0-starting_time"] = starttime
-    form["0-ending_time"] = endtime
-    form["0-station"] = ground_station_id
-    form["total"] = str(1)
+    form["obs-0-transmitter_uuid"] = uuid
+    form["obs-0-start"] = starttime
+    form["obs-0-end"] = endtime
+    form["obs-0-ground_station"] = ground_station_id
+    form["obs-TOTAL_FORMS"] = str(1)
+    form["obs-INITIAL_FORMS"] = str(0)
     session.post(obsURL, data=form, headers={'referer': obsURL})
     logging.debug("Scheduled!")
