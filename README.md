@@ -13,7 +13,7 @@ pip install -r requirements.txt
 
 ## Configuration
 
-Copy the env-dist file to .env and set your legacy SatNOGS Network credentials.
+Copy the env-dist file to .env and set your SatNOGS Network API token.
 
 ## Test run
 

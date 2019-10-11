@@ -1,5 +1,4 @@
 # Copy this file to .env and complete the information needed
 
-# Username and password to SatNOGS Network using the old authentication system
-NETWORK_USERNAME = ''
-NETWORK_PASSWORD = ''
+# Your SatNOGS network API token
+SATNOGS_API_TOKEN = ''

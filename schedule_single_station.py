@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from __future__ import division
-import requests
 from datetime import datetime, timedelta
 import os
 import lxml.html
@@ -254,28 +253,6 @@ def main():
     # Login and schedule passes
     schedule_needed = any([not satpass['scheduled'] for satpass in scheduledpasses])
     if schedule and schedule_needed:
-        loginUrl = '{}/accounts/login/'.format(settings.NETWORK_BASE_URL)  # login URL
-        session = requests.session()
-        login = session.get(loginUrl)  # Get login page for CSFR token
-        login_html = lxml.html.fromstring(login.text)
-        login_hidden_inputs = login_html.xpath(r'//form//input[@type="hidden"]')  # Get CSFR token
-        form = {x.attrib["name"]: x.attrib["value"] for x in login_hidden_inputs}
-        form["login"] = settings.NETWORK_USERNAME
-        form["password"] = settings.NETWORK_PASSWORD
-
-        # Login
-        result = session.post(loginUrl,
-                              data=form,
-                              headers={
-                                  'referer': loginUrl,
-                                  'user-agent': 'satnogs-auto-scheduler/0.0.1'
-                              })
-        if result.url.endswith("/accounts/login/"):
-            logging.info("Authentication failed")
-            sys.exit(-1)
-        else:
-            logging.info("Authentication successful")
-
         # Sort passes
         scheduledpasses_sorted = sorted(scheduledpasses, key=lambda satpass: satpass['tr'])
 
@@ -286,10 +263,10 @@ def main():
                               (int(satpass['satellite']['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
                                satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['altt']),
                                satpass['priority'], satpass['transmitter']['uuid'], satpass['satellite']['name'].rstrip()))
-                schedule_observation(session, int(satpass['satellite']['id']), satpass['transmitter']['uuid'],
+                schedule_observation(satpass['transmitter']['uuid'],
                                      ground_station_id,
-                                     satpass['tr'].strftime("%Y-%m-%d %H:%M:%S") + ".000",
-                                     satpass['ts'].strftime("%Y-%m-%d %H:%M:%S") + ".000")
+                                     satpass['tr'].strftime("%Y-%m-%d %H:%M:%S"),
+                                     satpass['ts'].strftime("%Y-%m-%d %H:%M:%S"))
 
         logging.info("All passes are scheduled. Exiting!")
 

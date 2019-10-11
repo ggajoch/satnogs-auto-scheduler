@@ -149,19 +149,20 @@ def get_groundstation_info(ground_station_id, allow_testing):
         return {}
 
 
-def schedule_observation(session, norad_cat_id, uuid, ground_station_id, starttime, endtime):
-
-    obsURL = '{}/observations/new/'.format(settings.NETWORK_BASE_URL)  # Observation URL
-    # Get the observation/new/ page to get the CSFR token
-    obs = session.get(obsURL)
-    obs_html = lxml.html.fromstring(obs.text)
-    hidden_inputs = obs_html.xpath(r'//form//input[@type="hidden"]')
-    form = {x.attrib["name"]: x.attrib["value"] for x in hidden_inputs}
-    form["obs-0-transmitter_uuid"] = uuid
-    form["obs-0-start"] = starttime
-    form["obs-0-end"] = endtime
-    form["obs-0-ground_station"] = ground_station_id
-    form["obs-TOTAL_FORMS"] = str(1)
-    form["obs-INITIAL_FORMS"] = str(0)
-    session.post(obsURL, data=form, headers={'referer': obsURL})
-    logging.debug("Scheduled!")
+def schedule_observation(uuid,
+                         ground_station_id,
+                         starttime,
+                         endtime):
+    observation = [{'ground_station': ground_station_id,
+                    'transmitter_uuid': uuid,
+                    'start': starttime,
+                    'end': endtime}]
+    try:
+        r = requests.post('{}/api/observations/'.format(settings.NETWORK_BASE_URL),
+                          json=observation,
+                          headers={'Authorization': 'Token {}'.format(settings.SATNOGS_API_TOKEN)})
+        r.raise_for_status()
+        logging.debug("Scheduled!")
+    except requests.HTTPError:
+        err = r.json()
+        logging.info("Failed to schedule pass: {}".format(err))

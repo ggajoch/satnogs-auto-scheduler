@@ -6,8 +6,7 @@ NETWORK_BASE_URL = config('NETWORK_BASE_URL', default='https://network.satnogs.o
 CACHE_DIR = config('CACHE_DIR', default='/tmp/cache')
 CACHE_AGE = config('CACHE_AGE', default=24)  # In hours
 MAX_NORAD_CAT_ID = config('MAX_NORAD_CAT_ID', default=90000)
-MIN_PASS_DURATION = config('MIN_PASS_DURATION', default=2)  # In minutes
+MIN_PASS_DURATION = config('MIN_PASS_DURATION', default=3)  # In minutes
 
 # Credentials
-NETWORK_USERNAME = config('NETWORK_USERNAME', default='')
-NETWORK_PASSWORD = config('NETWORK_PASSWORD', default='')
+SATNOGS_API_TOKEN = config('SATNOGS_API_TOKEN', default='')
