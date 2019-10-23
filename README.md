@@ -35,11 +35,15 @@ The following commands will add a list consisting of all DUV, BPSK1k2, BPSK9k6, 
 Please change the station id (here `37` - in the cache file and the list file name) to your corresponding one!
 
 ```bash
-awk '{if ($3>=80) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "FSK" | awk '{printf("%s 1.0 %s\n",$1,$2)}' > priorities_37.txt
-awk '{if ($3>=0) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "BPSK1k2" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> priorities_37.txt
-awk '{if ($3>=0) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "BPSK9k6" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> priorities_37.txt
-awk '{if ($3>=80) print $0 }' /tmp/cache/transmitters_37.txt | grep -e "MSK" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> priorities_37.txt
-sort -n -k 4 /tmp/cache/transmitters_37.txt | grep -e "DUV" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> priorities_37.txt
+STATION_ID=37
+TRM_FILE="/tmp/cache/transmitters_${STATION_ID}.txt"
+PRIO_FILE="priorities_${STATION_ID}.txt"
+
+awk '{if ($3>=80) print $0 }' ${TRM_FILE} | grep -e "FSK" | awk '{printf("%s 1.0 %s\n",$1,$2)}' > ${PRIO_FILE}
+awk '{if ($3>=0) print $0 }' ${TRM_FILE} | grep -e "BPSK1k2" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> ${PRIO_FILE}
+awk '{if ($3>=0) print $0 }' ${TRM_FILE} | grep -e "BPSK9k6" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> ${PRIO_FILE}
+awk '{if ($3>=80) print $0 }' ${TRM_FILE} | grep -e "MSK" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> ${PRIO_FILE}
+sort -n -k 4 ${TRM_FILE} | grep -e "DUV" | awk '{printf("%s 1.0 %s\n",$1,$2)}' >> ${PRIO_FILE}
 ```
 
 ## Add cron-job
