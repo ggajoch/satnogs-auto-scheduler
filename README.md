@@ -61,6 +61,47 @@ Add a line like this - execute the scheduling script on each full hour:
 Omit the `-f` option to also fill in the gaps, but be aware if using a rotator setup! This will wear-out your rotator very quickly!
 Add `-w 60` for a delay if you want to give your rotator a bit of time (60 s) to reset or home.
 
+## Add systemd-timer
+The advantage of using a systemd-timer for invoking the auto-scheduler lies in the better logging output (you can use `journalctl -u satnogs-auto-scheduler.service` to access the log output).
+
+- Add a systemd service unit file at `/etc/systemd/system/satnogs-auto-scheduler.service`:
+   ```
+   [Unit]
+   Description=Schedule SatNOGS observations for 1.2h on station 132
+   
+   [Service]
+   Type=oneshot
+   ExecStart=<path_to_auto_scheduler>/env/bin/python <path_to_auto_scheduler>/schedule_single_station.py -s <station_id> -d 1.2 -P <path_to_priority_list>/<priority_file>.txt -z
+   User=pi
+   ```
+
+- Add a systemd timer unit file at `/etc/systemd/system/satnogs-auto-scheduler.timer`:
+  ```
+  [Unit]
+  Description=Run satnogs-auto-scheduler hourly and on boot
+  
+  [Timer]
+  OnBootSec=2min
+  OnUnitActiveSec=1h
+  
+  [Install]
+  WantedBy=timers.target
+  ```
+
+- Start the timer with
+  ```bash
+  sudo systemctl start satnogs-auto-scheduler.timer
+  ```
+  
+- Enable the timer to be started on boot with
+  ```bash
+  sudo systemctl enable satnogs-auto-scheduler.timer
+  ```
+
+If you want to run the auto-scheduler once manually, you can do so with
+```bash
+sudo systemctl start satnogs-auto-scheduler.service
+```
 
 ## Usage
 
