@@ -3,24 +3,20 @@ from __future__ import division
 import requests
 import ephem
 from datetime import datetime, timedelta
-from satellite_tle import fetch_tles
 import os
 import lxml.html
 import argparse
 import logging
-from utils import get_active_transmitter_info, \
-                  get_transmitter_stats, \
-                  get_groundstation_info, \
+from utils import get_groundstation_info, \
                   get_scheduled_passes_from_network, \
                   schedule_observation, \
                   read_priorities_transmitters, \
-                  get_satellite_info, \
-                  update_needed, \
                   get_priority_passes
 from auto_scheduler import Twolineelement, Satellite
 from auto_scheduler.pass_predictor import find_passes
 from auto_scheduler.schedulers import ordered_scheduler, \
                                       report_efficiency
+from cache import CacheManager
 import settings
 from tqdm import tqdm
 import sys
@@ -142,7 +138,6 @@ def main():
         min_priority = 1.0
     else:
         min_priority = args.min_priority
-    cache_dir = "/tmp/cache"
     schedule = not args.dryrun
     only_priority = args.only_priority
     priority_filename = args.priorities
@@ -156,68 +151,14 @@ def main():
     ground_station = get_groundstation_info(ground_station_id, args.allow_testing)
     if not ground_station:
         sys.exit()
-    
-    # Create cache
-    if not os.path.isdir(cache_dir):
-        os.mkdir(cache_dir)
 
-    # Update logic
-    update = update_needed(tnow, ground_station_id, cache_dir)
-
-    # Update
-    if update:
-        logging.info('Updating transmitters and TLEs for station')
-        # Store current time
-        with open(os.path.join(cache_dir, "last_update_%d.txt" % ground_station_id), "w") as fp:
-            fp.write(tnow.strftime("%Y-%m-%dT%H:%M:%S") + "\n")
-
-        # Get active transmitters in frequency range of each antenna
-        transmitters = {}
-        for antenna in ground_station['antenna']:
-            for transmitter in get_active_transmitter_info(antenna["frequency"],
-                                                           antenna["frequency_max"]):
-                transmitters[transmitter['uuid']] = transmitter
-
-        # Get satellites which are alive
-        alive_norad_cat_ids = get_satellite_info()
-
-        # Get NORAD IDs
-        norad_cat_ids = sorted(
-            set([
-                transmitter["norad_cat_id"] for transmitter in transmitters.values()
-                if transmitter["norad_cat_id"] < settings.MAX_NORAD_CAT_ID and
-                transmitter["norad_cat_id"] in alive_norad_cat_ids
-            ]))
-
-        # Store transmitters
-        fp = open(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id), "w")
-        logging.info("Requesting transmitter success rates.")
-        transmitters_stats = get_transmitter_stats()
-        for transmitter in transmitters_stats:
-            uuid = transmitter["uuid"]
-            # Skip absent transmitters
-            if uuid not in transmitters.keys():
-                continue
-            # Skip dead satellites
-            if transmitters[uuid]["norad_cat_id"] not in alive_norad_cat_ids:
-                continue
-
-            fp.write(
-                "%05d %s %d %d %d %s\n" %
-                (transmitters[uuid]["norad_cat_id"], uuid, transmitter["stats"]["success_rate"],
-                 transmitter["stats"]["good_count"], transmitter["stats"]["total_count"], transmitters[uuid]["mode"]))
-
-        logging.info("Transmitter success rates received!")
-        fp.close()
-
-        # Get TLEs
-        tles = fetch_tles(norad_cat_ids)
-
-        # Store TLEs
-        fp = open(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id), "w")
-        for norad_cat_id, (source, tle) in tles.items():
-            fp.write("%s\n%s\n%s\n" % (tle[0], tle[1], tle[2]))
-        fp.close()
+    # Create or update the transmitter & TLE cache
+    cache = CacheManager(ground_station_id,
+                         ground_station['antenna'],
+                         settings.CACHE_DIR,
+                         settings.CACHE_AGE,
+                         settings.MAX_NORAD_CAT_ID)
+    cache.update()
 
     # Set observer
     observer = ephem.Observer()
@@ -255,23 +196,22 @@ def main():
     min_pass_duration = settings.MIN_PASS_DURATION
 
     # Read tles
-    with open(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id), "r") as f:
-        lines = f.readlines()
-        tles = [
-            Twolineelement(lines[i], lines[i + 1], lines[i + 2]) for i in range(0, len(lines), 3)
-        ]
+    tles = list(cache.read_tles())
 
     # Read transmitters
+    transmitters = cache.read_transmitters()
+
+    # Extract satellites from receivable transmitters
     satellites = []
-    with open(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id), "r") as f:
-        lines = f.readlines()
-        for line in lines:
-            item = line.split()
-            norad_cat_id, uuid, success_rate, good_count, data_count, mode = int(
-                item[0]), item[1], float(item[2]) / 100.0, int(item[3]), int(item[4]), item[5]
-            for tle in tles:
-                if tle.id == norad_cat_id:
-                    satellites.append(Satellite(tle, uuid, success_rate, good_count, data_count, mode))
+    for transmitter in transmitters:
+        for tle in tles:
+            if tle['norad_cat_id'] == transmitter['norad_cat_id']:
+                satellites.append(Satellite(Twolineelement(*tle['lines']),
+                                            transmitter['uuid'],
+                                            transmitter['success_rate'],
+                                            transmitter['good_count'],
+                                            transmitter['data_count'],
+                                            transmitter['mode']))
 
     # Find passes
     passes = []

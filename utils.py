@@ -197,29 +197,6 @@ def get_groundstation_info(ground_station_id, allow_testing):
         return {}
 
 
-def get_last_update(fname):
-    try:
-        fp = open(fname, "r")
-        line = fp.readline()
-        fp.close()
-        return datetime.strptime(line.strip(), "%Y-%m-%dT%H:%M:%S")
-    except IOError:
-        return None
-
-
-def update_needed(tnow, ground_station_id, cache_dir):
-    # Get last update
-    tlast = get_last_update(os.path.join(cache_dir, "last_update_%d.txt" % ground_station_id))
-
-    if tlast is None or (tnow - tlast).total_seconds() > settings.CACHE_AGE * 3600:
-        return True
-    if not os.path.isfile(os.path.join(cache_dir, "transmitters_%d.txt" % ground_station_id)):
-        return True
-    if not os.path.isfile(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id)):
-        return True
-    return False
-
-
 def schedule_observation(session, norad_cat_id, uuid, ground_station_id, starttime, endtime):
 
     obsURL = '{}/observations/new/'.format(settings.NETWORK_BASE_URL)  # Observation URL
