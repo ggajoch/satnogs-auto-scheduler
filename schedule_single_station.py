@@ -7,16 +7,19 @@ import os
 import lxml.html
 import argparse
 import logging
-from utils import get_groundstation_info, \
-                  get_scheduled_passes_from_network, \
-                  schedule_observation, \
-                  read_priorities_transmitters, \
+from utils import read_priorities_transmitters, \
                   get_priority_passes
 from auto_scheduler import Twolineelement, Satellite
 from auto_scheduler.pass_predictor import find_passes
 from auto_scheduler.schedulers import ordered_scheduler, \
                                       report_efficiency
 from cache import CacheManager
+from satnogs_client import get_active_transmitter_info, \
+                           get_groundstation_info, \
+                           get_satellite_info, \
+                           get_scheduled_passes_from_network, \
+                           get_transmitter_stats, \
+                           schedule_observation
 import settings
 from tqdm import tqdm
 import sys

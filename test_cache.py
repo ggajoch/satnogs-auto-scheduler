@@ -5,7 +5,7 @@ import logging
 import settings
 
 from cache import CacheManager
-from utils import get_groundstation_info
+from satnogs_client import get_groundstation_info
 
 
 if __name__ == '__main__':
