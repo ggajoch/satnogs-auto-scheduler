@@ -12,34 +12,12 @@ from utils import get_active_transmitter_info, get_transmitter_stats, \
     get_groundstation_info, get_scheduled_passes_from_network, ordered_scheduler, \
     report_efficiency, find_passes, schedule_observation, read_priorities_transmitters, \
     get_satellite_info, update_needed, get_priority_passes
-from auto_scheduler import twolineelement
+from auto_scheduler import twolineelement, satellite
 import settings
 from tqdm import tqdm
 import sys
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
-
-
-class satellite:
-    """Satellite class"""
-
-    def __init__(self, tle, transmitter, success_rate, good_count, data_count, mode):
-        """Define a satellite"""
-
-        self.tle0 = tle.tle0
-        self.tle1 = tle.tle1
-        self.tle2 = tle.tle2
-        self.id = tle.id
-        self.name = tle.name.strip()
-        self.transmitter = transmitter
-        self.success_rate = success_rate
-        self.good_count = good_count
-        self.data_count = data_count
-        self.mode = mode
-        
-    def __repr__(self):
-        return "%s %s %d %d %d %s %s" % (self.id, self.transmitter, self.success_rate, self.good_count,
-                                         self.data_count, self.mode, self.name)
 
 
 def _log_level_string_to_int(log_level_string):
