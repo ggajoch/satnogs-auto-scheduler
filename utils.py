@@ -223,7 +223,6 @@ def report_efficiency(scheduledpasses, passes):
 def find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_duration):
     # Loop over satellites
     passes = []
-    passid = 0
     logging.info('Finding all passes for %s satellites:' % len(satellites))
     for satellite in tqdm(satellites):
         # Set start time
@@ -259,7 +258,6 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_dur
                 azimuth_s = format(math.degrees(azs), '.0f')
             except TypeError:
                 break
-            passid += 1
 
             pass_duration = ts.datetime() - tr.datetime()
 
@@ -277,7 +275,6 @@ def find_passes(satellites, observer, tmin, tmax, minimum_altitude, min_pass_dur
 
                     # get pass information
                     satpass = {
-                        'passid': passid,
                         'mytime': str(observer.date),
                         'name': str(satellite.name),
                         'id': str(satellite.id),
