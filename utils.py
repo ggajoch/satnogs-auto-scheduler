@@ -2,6 +2,8 @@ import logging
 import settings
 import os
 
+from auto_scheduler import Twolineelement, Satellite
+
 
 def read_priorities_transmitters(filename):
     # Priorities and favorite transmitters
@@ -55,3 +57,20 @@ def get_priority_passes(passes, priorities, favorite_transmitters, only_priority
             if satpass['priority'] >= min_priority:
                 normal.append(satpass)
     return (priority, normal)
+
+
+def satellites_from_transmitters(transmitters, tles):
+    '''
+    Extract interesting satellites from receivable transmitters
+    '''
+    satellites = []
+    for transmitter in transmitters:
+        for tle in tles:
+            if tle['norad_cat_id'] == transmitter['norad_cat_id']:
+                satellites.append(Satellite(Twolineelement(*tle['lines']),
+                                            transmitter['uuid'],
+                                            transmitter['success_rate'],
+                                            transmitter['good_count'],
+                                            transmitter['data_count'],
+                                            transmitter['mode']))
+    return satellites

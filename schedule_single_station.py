@@ -7,9 +7,9 @@ import os
 import lxml.html
 import argparse
 import logging
-from utils import read_priorities_transmitters, \
-                  get_priority_passes
-from auto_scheduler import Twolineelement, Satellite
+from utils import get_priority_passes, \
+                  read_priorities_transmitters, \
+                  satellites_from_transmitters
 from auto_scheduler.pass_predictor import find_passes
 from auto_scheduler.schedulers import ordered_scheduler, \
                                       report_efficiency
@@ -205,17 +205,8 @@ def main():
     # Read transmitters
     transmitters = cache.read_transmitters()
 
-    # Extract satellites from receivable transmitters
-    satellites = []
-    for transmitter in transmitters:
-        for tle in tles:
-            if tle['norad_cat_id'] == transmitter['norad_cat_id']:
-                satellites.append(Satellite(Twolineelement(*tle['lines']),
-                                            transmitter['uuid'],
-                                            transmitter['success_rate'],
-                                            transmitter['good_count'],
-                                            transmitter['data_count'],
-                                            transmitter['mode']))
+    # Extract interesting satellites from receivable transmitters
+    satellites = satellites_from_transmitters(transmitters, tles)
 
     # Find passes
     passes = []
