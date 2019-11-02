@@ -9,10 +9,12 @@ import lxml.html
 import argparse
 import logging
 from utils import get_active_transmitter_info, get_transmitter_stats, \
-    get_groundstation_info, get_scheduled_passes_from_network, ordered_scheduler, \
-    report_efficiency, find_passes, schedule_observation, read_priorities_transmitters, \
+    get_groundstation_info, get_scheduled_passes_from_network,  \
+    find_passes, schedule_observation, read_priorities_transmitters, \
     get_satellite_info, update_needed, get_priority_passes
 from auto_scheduler import twolineelement, satellite
+from auto_scheduler.schedulers import ordered_scheduler, \
+                                      report_efficiency
 import settings
 from tqdm import tqdm
 import sys
