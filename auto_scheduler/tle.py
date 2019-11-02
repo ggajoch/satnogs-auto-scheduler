@@ -1,4 +1,4 @@
-class twolineelement:
+class Twolineelement:
     """TLE class"""
 
     def __init__(self, tle0, tle1, tle2):

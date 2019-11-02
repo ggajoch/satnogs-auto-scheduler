@@ -1,2 +1,2 @@
-from .tle import twolineelement
+from .tle import Twolineelement
 from .satellite import satellite

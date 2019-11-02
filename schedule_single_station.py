@@ -17,7 +17,7 @@ from utils import get_active_transmitter_info, \
                   get_satellite_info, \
                   update_needed, \
                   get_priority_passes
-from auto_scheduler import twolineelement, satellite
+from auto_scheduler import Twolineelement, satellite
 from auto_scheduler.pass_predictor import find_passes
 from auto_scheduler.schedulers import ordered_scheduler, \
                                       report_efficiency
@@ -258,7 +258,7 @@ def main():
     with open(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id), "r") as f:
         lines = f.readlines()
         tles = [
-            twolineelement(lines[i], lines[i + 1], lines[i + 2]) for i in range(0, len(lines), 3)
+            Twolineelement(lines[i], lines[i + 1], lines[i + 2]) for i in range(0, len(lines), 3)
         ]
 
     # Read transmitters
