@@ -12,30 +12,12 @@ from utils import get_active_transmitter_info, get_transmitter_stats, \
     get_groundstation_info, get_scheduled_passes_from_network, ordered_scheduler, \
     report_efficiency, find_passes, schedule_observation, read_priorities_transmitters, \
     get_satellite_info, update_needed, get_priority_passes
+from auto_scheduler import twolineelement
 import settings
 from tqdm import tqdm
 import sys
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
-
-
-class twolineelement:
-    """TLE class"""
-
-    def __init__(self, tle0, tle1, tle2):
-        """Define a TLE"""
-
-        self.tle0 = tle0
-        self.tle1 = tle1
-        self.tle2 = tle2
-        if tle0[:2] == "0 ":
-            self.name = tle0[2:]
-        else:
-            self.name = tle0
-            if tle1.split(" ")[1] == "":
-                self.id = int(tle1.split(" ")[2][:4])
-            else:
-                self.id = int(tle1.split(" ")[1][:5])
 
 
 class satellite:
