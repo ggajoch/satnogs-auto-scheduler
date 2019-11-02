@@ -67,6 +67,8 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
 
     # Loop
     start = True
+    next_url = '{}/api/observations/?ground_station={:d}'.format(
+                settings.NETWORK_BASE_URL, ground_station)
     scheduledpasses = []
 
     logging.info("Requesting scheduled passes for ground station %d" % ground_station)
@@ -74,17 +76,17 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     # before the start time of the selected timerange for scheduling
     # NOTE: This algorithm is based on the order in which the API returns the observations, i.e.
     # most recent observations are returned at first!
-    while True:
-        if start:
-            r = client.get('{}/api/observations/?ground_station={:d}'.format(
-                settings.NETWORK_BASE_URL, ground_station))
-            start = False
+    while next_url:
+        r = client.get(next_url)
+
+        if 'next' in r.links:
+            next_url = r.links['next']['url']
         else:
-            nextpage = r.links.get("next")
-            r = client.get(nextpage["url"])
+            logging.debug("No further pages with observations")
+            next_url = None
 
         if not r.json():
-            # Ground station has no observations yet
+            logging.info("Ground station has no observations yet")
             break
 
         # r.json() is a list of dicts/observations
