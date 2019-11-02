@@ -12,13 +12,13 @@ from utils import get_active_transmitter_info, \
                   get_transmitter_stats, \
                   get_groundstation_info, \
                   get_scheduled_passes_from_network, \
-                  find_passes, \
                   schedule_observation, \
                   read_priorities_transmitters, \
                   get_satellite_info, \
                   update_needed, \
                   get_priority_passes
 from auto_scheduler import twolineelement, satellite
+from auto_scheduler.pass_predictor import find_passes
 from auto_scheduler.schedulers import ordered_scheduler, \
                                       report_efficiency
 import settings
@@ -274,7 +274,16 @@ def main():
                     satellites.append(satellite(tle, uuid, success_rate, good_count, data_count, mode))
 
     # Find passes
-    passes = find_passes(satellites, observer, tmin, tmax, min_culmination, min_pass_duration)
+    passes = []
+    logging.info('Finding all passes for %s satellites:' % len(satellites))
+    # Loop over satellites
+    for satellite in tqdm(satellites):
+        passes.extend(find_passes(satellite,
+                                  observer,
+                                  tmin,
+                                  tmax,
+                                  min_culmination,
+                                  min_pass_duration))
 
     priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
     
