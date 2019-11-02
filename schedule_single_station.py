@@ -17,7 +17,7 @@ from utils import get_active_transmitter_info, \
                   get_satellite_info, \
                   update_needed, \
                   get_priority_passes
-from auto_scheduler import Twolineelement, satellite
+from auto_scheduler import Twolineelement, Satellite
 from auto_scheduler.pass_predictor import find_passes
 from auto_scheduler.schedulers import ordered_scheduler, \
                                       report_efficiency
@@ -271,7 +271,7 @@ def main():
                 item[0]), item[1], float(item[2]) / 100.0, int(item[3]), int(item[4]), item[5]
             for tle in tles:
                 if tle.id == norad_cat_id:
-                    satellites.append(satellite(tle, uuid, success_rate, good_count, data_count, mode))
+                    satellites.append(Satellite(tle, uuid, success_rate, good_count, data_count, mode))
 
     # Find passes
     passes = []

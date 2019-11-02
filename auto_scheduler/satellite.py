@@ -1,4 +1,4 @@
-class satellite:
+class Satellite:
     """Satellite class"""
 
     def __init__(self, tle, transmitter, success_rate, good_count, data_count, mode):
