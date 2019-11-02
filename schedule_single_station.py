@@ -8,24 +8,56 @@ import os
 import lxml.html
 import argparse
 import logging
-from utils import get_active_transmitter_info, \
-                  get_transmitter_stats, \
-                  get_groundstation_info, \
-                  get_scheduled_passes_from_network, \
-                  schedule_observation, \
-                  read_priorities_transmitters, \
-                  get_satellite_info, \
-                  update_needed, \
-                  get_priority_passes
-from auto_scheduler import Twolineelement, Satellite
-from auto_scheduler.pass_predictor import find_passes
-from auto_scheduler.schedulers import ordered_scheduler, \
-                                      report_efficiency
+from utils import get_active_transmitter_info, get_transmitter_stats, \
+    get_groundstation_info, get_scheduled_passes_from_network, ordered_scheduler, \
+    report_efficiency, find_passes, schedule_observation, read_priorities_transmitters, \
+    get_satellite_info, update_needed, get_priority_passes
 import settings
 from tqdm import tqdm
 import sys
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
+
+
+class twolineelement:
+    """TLE class"""
+
+    def __init__(self, tle0, tle1, tle2):
+        """Define a TLE"""
+
+        self.tle0 = tle0
+        self.tle1 = tle1
+        self.tle2 = tle2
+        if tle0[:2] == "0 ":
+            self.name = tle0[2:]
+        else:
+            self.name = tle0
+            if tle1.split(" ")[1] == "":
+                self.id = int(tle1.split(" ")[2][:4])
+            else:
+                self.id = int(tle1.split(" ")[1][:5])
+
+
+class satellite:
+    """Satellite class"""
+
+    def __init__(self, tle, transmitter, success_rate, good_count, data_count, mode):
+        """Define a satellite"""
+
+        self.tle0 = tle.tle0
+        self.tle1 = tle.tle1
+        self.tle2 = tle.tle2
+        self.id = tle.id
+        self.name = tle.name.strip()
+        self.transmitter = transmitter
+        self.success_rate = success_rate
+        self.good_count = good_count
+        self.data_count = data_count
+        self.mode = mode
+        
+    def __repr__(self):
+        return "%s %s %d %d %d %s %s" % (self.id, self.transmitter, self.success_rate, self.good_count,
+                                         self.data_count, self.mode, self.name)
 
 
 def _log_level_string_to_int(log_level_string):
@@ -258,7 +290,7 @@ def main():
     with open(os.path.join(cache_dir, "tles_%d.txt" % ground_station_id), "r") as f:
         lines = f.readlines()
         tles = [
-            Twolineelement(lines[i], lines[i + 1], lines[i + 2]) for i in range(0, len(lines), 3)
+            twolineelement(lines[i], lines[i + 1], lines[i + 2]) for i in range(0, len(lines), 3)
         ]
 
     # Read transmitters
@@ -271,19 +303,10 @@ def main():
                 item[0]), item[1], float(item[2]) / 100.0, int(item[3]), int(item[4]), item[5]
             for tle in tles:
                 if tle.id == norad_cat_id:
-                    satellites.append(Satellite(tle, uuid, success_rate, good_count, data_count, mode))
+                    satellites.append(satellite(tle, uuid, success_rate, good_count, data_count, mode))
 
     # Find passes
-    passes = []
-    logging.info('Finding all passes for %s satellites:' % len(satellites))
-    # Loop over satellites
-    for satellite in tqdm(satellites):
-        passes.extend(find_passes(satellite,
-                                  observer,
-                                  tmin,
-                                  tmax,
-                                  min_culmination,
-                                  min_pass_duration))
+    passes = find_passes(satellites, observer, tmin, tmax, min_culmination, min_pass_duration)
 
     priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
     
