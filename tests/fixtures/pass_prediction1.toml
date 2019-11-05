@@ -1,0 +1,27 @@
+# Input Section
+tmin = 2019-11-05T12:07:10
+tmax = 2019-11-05T13:07:10
+min_culmination = 5
+min_pass_duration = 2
+
+[files]
+tles_filename = "tests/fixtures/tles.txt"
+transmitters_filename = "tests/fixtures/transmitters.txt"
+
+[ground_station]
+altitude = 280
+lat = 39.236
+lng = -86.305
+min_horizon =  5
+
+# Output Section
+[passes]
+count = 119
+
+[passes.first_pass]
+tr = 2019-11-05T12:22:27
+tt = 2019-11-05T12:26:26
+ts = 2019-11-05T12:30:24
+azr = 319
+altt = 30
+azs = 100
