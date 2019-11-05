@@ -182,19 +182,21 @@ def main():
             min_culmination = args.min_culmination
 
     # Set minimum rise/set elevation
-    if args.min_riseset is None:
-        min_riseset = ground_station['min_horizon']
-    else:
-        if args.min_riseset < 0.0:
-            min_riseset = 0.0
-        elif args.min_riseset > 90.0:
-            min_riseset = 90.0
-        else:
-            min_riseset = args.min_riseset
-            
-    # Use minimum altitude for computing rise and set times (horizon to horizon otherwise)
     if not args.horizon:
-        observer.horizon = str(min_riseset)
+        # Use minimum altitude for computing rise and set times (horizon to horizon otherwise)
+        if args.min_riseset is None:
+            min_riseset = ground_station['min_horizon']
+        else:
+            if args.min_riseset < 0.0:
+                min_riseset = 0.0
+            elif args.min_riseset > 90.0:
+                min_riseset = 90.0
+            else:
+                min_riseset = args.min_riseset
+    else:
+        min_riseset = 0.0
+            
+    observer.horizon = str(min_riseset)
 
     # Minimum duration of a pass
     min_pass_duration = settings.MIN_PASS_DURATION
