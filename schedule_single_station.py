@@ -8,7 +8,8 @@ import argparse
 import logging
 from utils import get_priority_passes, \
                   read_priorities_transmitters, \
-                  satellites_from_transmitters
+                  satellites_from_transmitters, \
+                  print_scheduledpass_summary
 from auto_scheduler.pass_predictor import create_observer, \
                                           find_passes
 from auto_scheduler.schedulers import ordered_scheduler, \
@@ -211,6 +212,7 @@ def main():
     # Find passes
     passes = []
     logging.info('Finding all passes for %s satellites:' % len(satellites))
+
     # Loop over satellites
     for satellite in tqdm(satellites):
         passes.extend(find_passes(satellite,
@@ -247,21 +249,10 @@ def main():
     # Find unique objects
     satids = sorted(set([satpass['id'] for satpass in passes]))
 
-    schedule_needed = False
-
-    logging.info("GS  | Sch | NORAD | Start time          | End time            |  El | " +
-                 "Priority | Transmitter UUID       | Mode       | Satellite name ")
-    for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
-        logging.info(
-            "%3d | %3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %-10s | %s" %
-            (ground_station_id, satpass['scheduled'], int(
-                satpass['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
-             satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['altt']) if satpass['altt']
-             else 0., satpass['priority'], satpass['uuid'], satpass['mode'], satpass['name'].rstrip()))
-        if not satpass['scheduled']:
-            schedule_needed = True
+    print_scheduledpass_summary(scheduledpasses, ground_station_id, printer=logging.info)
 
     # Login and schedule passes
+    schedule_needed = any([not satpass['scheduled'] for satpass in scheduledpasses])
     if schedule and schedule_needed:
         loginUrl = '{}/accounts/login/'.format(settings.NETWORK_BASE_URL)  # login URL
         session = requests.session()
