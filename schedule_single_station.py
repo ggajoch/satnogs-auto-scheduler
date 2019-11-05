@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import division
 import requests
-import ephem
 from datetime import datetime, timedelta
 import os
 import lxml.html
@@ -10,7 +9,8 @@ import logging
 from utils import get_priority_passes, \
                   read_priorities_transmitters, \
                   satellites_from_transmitters
-from auto_scheduler.pass_predictor import find_passes
+from auto_scheduler.pass_predictor import create_observer, \
+                                          find_passes
 from auto_scheduler.schedulers import ordered_scheduler, \
                                       report_efficiency
 from cache import CacheManager
@@ -164,12 +164,6 @@ def main():
                          settings.MAX_NORAD_CAT_ID)
     cache.update()
 
-    # Set observer
-    observer = ephem.Observer()
-    observer.lon = str(ground_station['lng'])
-    observer.lat = str(ground_station['lat'])
-    observer.elevation = ground_station['altitude']
-
     # Set minimum culmination elevation
     if args.min_culmination is None:
         min_culmination = ground_station['min_horizon']
@@ -196,7 +190,11 @@ def main():
     else:
         min_riseset = 0.0
             
-    observer.horizon = str(min_riseset)
+    # Set observer
+    observer = create_observer(ground_station['lat'],
+                               ground_station['lng'],
+                               ground_station['altitude'],
+                               min_riseset=min_riseset)
 
     # Minimum duration of a pass
     min_pass_duration = settings.MIN_PASS_DURATION
