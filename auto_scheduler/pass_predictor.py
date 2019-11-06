@@ -36,6 +36,7 @@ def overlap(satpass, scheduledpasses, wait_time_seconds):
 
     return overlap
 
+
 def create_observer(lat, lon, alt, min_riseset=0.0):
     '''
     Create an observer instance.
@@ -47,6 +48,7 @@ def create_observer(lat, lon, alt, min_riseset=0.0):
     observer.horizon = str(min_riseset)
 
     return observer
+
 
 def find_passes(satellite,
                 observer,
@@ -129,5 +131,5 @@ def find_passes(satellite,
             observer.date = ephem.Date(ts).datetime() + timedelta(minutes=1)
         else:
             keep_digging = False
-            
+
     return passes
