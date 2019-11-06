@@ -108,7 +108,6 @@ def find_passes(satellite,
 
                 # get pass information
                 satpass = {
-                    'mytime': str(observer.date),
                     'name': str(satellite.name),
                     'id': str(satellite.id),
                     'tle1': str(satellite.tle1),
