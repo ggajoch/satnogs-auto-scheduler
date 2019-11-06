@@ -247,7 +247,7 @@ def main():
     report_efficiency(scheduledpasses, passes)
 
     # Find unique objects
-    satids = sorted(set([satpass['id'] for satpass in passes]))
+    satids = sorted(set([satpass['satellite']['id'] for satpass in passes]))
 
     print_scheduledpass_summary(scheduledpasses, ground_station_id, printer=logging.info)
 
@@ -283,10 +283,10 @@ def main():
         for satpass in tqdm(scheduledpasses_sorted):
             if not satpass['scheduled']:
                 logging.debug("Scheduling %05d %s %s %3.0f %4.3f %s %s" %
-                              (int(satpass['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
+                              (int(satpass['satellite']['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
                                satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['altt']),
-                               satpass['priority'], satpass['uuid'], satpass['name'].rstrip()))
-                schedule_observation(session, int(satpass['id']), satpass['uuid'],
+                               satpass['priority'], satpass['transmitter']['uuid'], satpass['satellite']['name'].rstrip()))
+                schedule_observation(session, int(satpass['satellite']['id']), satpass['transmitter']['uuid'],
                                      ground_station_id,
                                      satpass['tr'].strftime("%Y-%m-%d %H:%M:%S") + ".000",
                                      satpass['ts'].strftime("%Y-%m-%d %H:%M:%S") + ".000")

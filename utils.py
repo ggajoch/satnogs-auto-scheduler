@@ -33,25 +33,25 @@ def get_priority_passes(passes, priorities, favorite_transmitters, only_priority
     normal = []
     for satpass in passes:
         # Is this satellite a priority satellite?
-        if satpass['id'] in priorities:
+        if satpass['satellite']['id'] in priorities:
             # Is this transmitter a priority transmitter?
-            if satpass['uuid'] == favorite_transmitters[satpass['id']]:
-                satpass['priority'] = priorities[satpass['id']]
-                satpass['uuid'] = favorite_transmitters[satpass['id']]
+            if satpass['transmitter']['uuid'] == favorite_transmitters[satpass['satellite']['id']]:
+                satpass['priority'] = priorities[satpass['satellite']['id']]
+                satpass['transmitter']['uuid'] = favorite_transmitters[satpass['satellite']['id']]
 
                 # Add if priority is high enough
                 if satpass['priority'] >= min_priority:
                     priority.append(satpass)
         elif only_priority:
             # Find satellite transmitter with highest number of good observations
-            max_good_count = max([s['good_count'] for s in passes if s["id"] == satpass["id"]])
+            max_good_count = max([s['transmitter']['good_count'] for s in passes if s['satellite']["id"] == satpass['satellite']["id"]])
             if max_good_count > 0:
                 satpass['priority'] = \
                     (float(satpass['altt']) / 90.0) \
-                    * satpass['success_rate'] \
-                    * float(satpass['good_count']) / max_good_count
+                    * satpass['transmitter']['success_rate'] \
+                    * float(satpass['transmitter']['good_count']) / max_good_count
             else:
-                satpass['priority'] = (float(satpass['altt']) / 90.0) * satpass['success_rate']
+                satpass['priority'] = (float(satpass['altt']) / 90.0) * satpass['transmitter']['success_rate']
 
             # Add if priority is high enough
             if satpass['priority'] >= min_priority:
@@ -85,11 +85,11 @@ def print_scheduledpass_summary(scheduledpasses, ground_station_id, printer=prin
             "%3d | %3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %-10s | %s"%(
              ground_station_id,
              satpass['scheduled'],
-             int(satpass['id']),
+             int(satpass['satellite']['id']),
              satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
              satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
              float(satpass['altt']) if satpass['altt'] else 0.,
              satpass.get('priority', 0.0),
-             satpass.get('uuid', ''),
-             satpass.get('mode', ''),
-             satpass['name'].rstrip()))
+             satpass['transmitter'].get('uuid', ''),
+             satpass['transmitter'].get('mode', ''),
+             satpass['satellite']['name'].rstrip()))

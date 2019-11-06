@@ -108,10 +108,12 @@ def find_passes(satellite,
 
                 # get pass information
                 satpass = {
-                    'name': str(satellite.name),
-                    'id': str(satellite.id),
-                    'tle1': str(satellite.tle1),
-                    'tle2': str(satellite.tle2),
+                    'satellite': {
+                        'name': str(satellite.name),
+                        'id': str(satellite.id),
+                        'tle1': str(satellite.tle1),
+                        'tle2': str(satellite.tle2),
+                    },
                     'tr': tr.datetime(),  # Rise time
                     'azr': azimuth_r,  # Rise Azimuth
                     'tt': tt.datetime(),  # Max altitude time
@@ -119,11 +121,13 @@ def find_passes(satellite,
                     'ts': ts.datetime(),  # Set time
                     'azs': azimuth_s,  # Set azimuth
                     'valid': valid,
-                    'uuid': satellite.transmitter,
-                    'success_rate': satellite.success_rate,
-                    'good_count': satellite.good_count,
-                    'data_count': satellite.data_count,
-                    'mode': satellite.mode,
+                    'transmitter': {
+                        'uuid': satellite.transmitter,
+                        'success_rate': satellite.success_rate,
+                        'good_count': satellite.good_count,
+                        'data_count': satellite.data_count,
+                        'mode': satellite.mode,
+                    },
                     'scheduled': False
                 }
                 passes.append(satpass)
