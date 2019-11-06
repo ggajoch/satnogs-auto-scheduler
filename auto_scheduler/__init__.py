@@ -1,2 +1,2 @@
-from .tle import Twolineelement
-from .satellite import Satellite
+from .tle import Twolineelement  # noqa
+from .satellite import Satellite  # noqa
