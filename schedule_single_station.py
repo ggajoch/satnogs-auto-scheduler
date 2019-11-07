@@ -47,7 +47,7 @@ def main():
     parser.add_argument("-s", "--station", help="Ground station ID", type=int)
     parser.add_argument("-t",
                         "--starttime",
-                        help="Start time (YYYY-MM-DD HH:MM:SS) [default: now]",
+                        help="Start time (YYYY-MM-DDTHH:MM:SS) [default: now]",
                         default=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
     parser.add_argument("-d",
                         "--duration",
