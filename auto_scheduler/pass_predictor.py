@@ -100,11 +100,6 @@ def find_passes(satellite,
         if tr < ephem.date(tmax):
             if (float(elevation) >= minimum_altitude and tr < ts and
                     pass_duration > timedelta(minutes=min_pass_duration)):
-                valid = True
-
-                # invalidate passes that start too soon
-                if tr < ephem.Date(datetime.now() + timedelta(minutes=5)):
-                    valid = False
 
                 # get pass information
                 satpass = {
@@ -114,7 +109,14 @@ def find_passes(satellite,
                     'altt': elevation,  # Max altitude
                     'ts': ts.datetime(),  # Set time
                     'azs': azimuth_s,  # Set azimuth
-                    'valid': valid
+                    'transmitter': {
+                        'uuid': satellite.transmitter,
+                        'success_rate': satellite.success_rate,
+                        'good_count': satellite.good_count,
+                        'data_count': satellite.data_count,
+                        'mode': satellite.mode,
+                    },
+                    'scheduled': False
                 }
                 passes.append(satpass)
             observer.date = ephem.Date(ts).datetime() + timedelta(minutes=1)
