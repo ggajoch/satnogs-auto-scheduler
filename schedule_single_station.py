@@ -214,12 +214,26 @@ def main():
 
     # Loop over satellites
     for satellite in tqdm(satellites):
-        passes.extend(find_passes(satellite,
-                                  observer,
-                                  tmin,
-                                  tmax,
-                                  min_culmination,
-                                  min_pass_duration))
+        satellite_passes = find_passes(satellite,
+                                       observer,
+                                       tmin,
+                                       tmax,
+                                       min_culmination,
+                                       min_pass_duration)
+        for p in satellite_passes:
+            p.update({'satellite': {
+                        'name': str(satellite.name),
+                        'id': str(satellite.id),
+                        'tle1': str(satellite.tle1),
+                        'tle2': str(satellite.tle2)},
+                      'transmitter': {
+                        'uuid': satellite.transmitter,
+                        'success_rate': satellite.success_rate,
+                        'good_count': satellite.good_count,
+                        'data_count': satellite.data_count,
+                        'mode': satellite.mode},
+                    'scheduled': False})
+            passes.append(p)
 
     priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
     
