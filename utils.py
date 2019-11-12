@@ -1,6 +1,7 @@
+import csv
 import logging
-import settings
 import os
+import settings
 
 from auto_scheduler import Twolineelement, Satellite
 
@@ -9,23 +10,24 @@ def read_priorities_transmitters(filename):
     # Priorities and favorite transmitters
     # read the following format
     #   43017 1. KgazZMKEa74VnquqXLwAvD
-    if filename is not None and os.path.exists(filename):
-        with open(filename, "r") as fp:
-            satprio = {}
-            sattrans = {}
-            lines = fp.readlines()
-            for line in lines:
-                if line[0]=="#":
-                    continue
-                parts = line.strip().split(" ")
-                sat = parts[0]
-                prio = parts[1]
-                transmitter = parts[2]
-                satprio[sat] = float(prio)
-                sattrans[sat] = transmitter
-        return (satprio, sattrans)
-    else:
+    if not filename or not os.path.exists(filename):
+        # No priorites file found, return empty objects
+        logging.warning('Could not read priority file {}.'.format(filename))
         return ({}, {})
+
+    satprio = {}
+    sattrans = {}
+    with open(filename, "r") as fp:
+        reader = csv.reader(filter(lambda row: row[0]!='#', fp),
+                            delimiter=' ')
+        for row in reader:
+            if len(row) != 3:
+                # Skip malformed lines
+                continue
+            sat, prio, transmitter = row
+            satprio[sat] = float(prio)
+            sattrans[sat] = transmitter
+    return (satprio, sattrans)
 
 
 def get_priority_passes(passes, priorities, favorite_transmitters, only_priority, min_priority):
