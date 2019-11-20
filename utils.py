@@ -33,15 +33,15 @@ def get_priority_passes(passes, priorities, favorite_transmitters, only_priority
     normal = []
     for satpass in passes:
         # Is this satellite a priority satellite?
-        if satpass['satellite']['id'] in priorities:
-            # Is this transmitter a priority transmitter?
-            if satpass['transmitter']['uuid'] == favorite_transmitters[satpass['satellite']['id']]:
-                satpass['priority'] = priorities[satpass['satellite']['id']]
-                satpass['transmitter']['uuid'] = favorite_transmitters[satpass['satellite']['id']]
+        # Is this transmitter a favorite transmitter?
+        # Is the priority high enough?
+        if satpass['satellite']['id'] in priorities and
+           satpass['transmitter']['uuid'] == favorite_transmitters[satpass['satellite']['id']] and
+           priorities[satpass['satellite']['id']] >= min_priority:
+            satpass['priority'] = priorities[satpass['satellite']['id']]
+            satpass['transmitter']['uuid'] = favorite_transmitters[satpass['satellite']['id']]
 
-                # Add if priority is high enough
-                if satpass['priority'] >= min_priority:
-                    priority.append(satpass)
+            priority.append(satpass)
         elif only_priority:
             # Find satellite transmitter with highest number of good observations
             max_good_count = max([s['transmitter']['good_count'] for s in passes if s['satellite']["id"] == satpass['satellite']["id"]])
