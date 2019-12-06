@@ -92,15 +92,19 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
         # r.json() is a list of dicts/observations
         for o in r.json():
             satpass = {
-                "id": o['norad_cat_id'],
                 "tr": datetime.strptime(o['start'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S"),
                 "ts": datetime.strptime(o['end'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S"),
                 "scheduled": True,
                 "altt": o['max_altitude'],
                 "priority": 1,
-                "uuid": o['transmitter'],
-                "name": '',
-                "mode": ''
+                "transmitter": {
+                    "uuid": o['transmitter'],
+                    "mode": ''
+                },
+                "satellite": {
+                    "name": '',
+                    "id": o['norad_cat_id']
+                }
             }
 
             if satpass['ts'] > tmin and satpass['tr'] < tmax:
