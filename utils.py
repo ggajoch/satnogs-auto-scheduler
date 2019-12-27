@@ -37,8 +37,8 @@ def get_priority_passes(passes, priorities, favorite_transmitters, only_priority
         # Is this satellite a priority satellite?
         # Is this transmitter a favorite transmitter?
         # Is the priority high enough?
-        if satpass['satellite']['id'] in priorities and
-           satpass['transmitter']['uuid'] == favorite_transmitters[satpass['satellite']['id']] and
+        if satpass['satellite']['id'] in priorities and \
+           satpass['transmitter']['uuid'] == favorite_transmitters[satpass['satellite']['id']] and \
            priorities[satpass['satellite']['id']] >= min_priority:
             satpass['priority'] = priorities[satpass['satellite']['id']]
             satpass['transmitter']['uuid'] = favorite_transmitters[satpass['satellite']['id']]
