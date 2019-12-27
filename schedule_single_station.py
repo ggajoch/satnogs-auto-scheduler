@@ -1,28 +1,20 @@
 #!/usr/bin/env python3
 from __future__ import division
-from datetime import datetime, timedelta
-import os
-import lxml.html
+
 import argparse
 import logging
-from utils import get_priority_passes, \
-                  read_priorities_transmitters, \
-                  satellites_from_transmitters, \
-                  print_scheduledpass_summary
-from auto_scheduler.pass_predictor import create_observer, \
-                                          find_passes
-from auto_scheduler.schedulers import ordered_scheduler, \
-                                      report_efficiency
-from cache import CacheManager
-from satnogs_client import get_active_transmitter_info, \
-                           get_groundstation_info, \
-                           get_satellite_info, \
-                           get_scheduled_passes_from_network, \
-                           get_transmitter_stats, \
-                           schedule_observation
-import settings
-from tqdm import tqdm
 import sys
+from datetime import datetime, timedelta
+
+import settings
+from auto_scheduler.pass_predictor import create_observer, find_passes
+from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
+from cache import CacheManager
+from satnogs_client import get_groundstation_info, \
+    get_scheduled_passes_from_network, schedule_observation
+from tqdm import tqdm
+from utils import get_priority_passes, print_scheduledpass_summary, \
+    read_priorities_transmitters, satellites_from_transmitters
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
@@ -57,12 +49,14 @@ def main():
                         default=1.0)
     parser.add_argument("-m",
                         "--min-culmination",
-                        help="Minimum culmination elevation [degrees; ground station default, minimum: 0, maximum: 90]",
+                        help="Minimum culmination elevation [degrees; " +
+                        "ground station default, minimum: 0, maximum: 90]",
                         type=float,
                         default=None)
     parser.add_argument("-r",
                         "--min-riseset",
-                        help="Minimum rise/set elevation [degrees; ground station default, minimum: 0, maximum: 90]",
+                        help="Minimum rise/set elevation [degrees; " +
+                        "ground station default, minimum: 0, maximum: 90]",
                         type=float,
                         default=None)
     parser.add_argument("-z",
@@ -98,11 +92,12 @@ def main():
                         "than this limit [default: 0.0, maximum: 1.0]",
                         type=float,
                         default=0.)
-    parser.add_argument("-T",
-                        "--allow-testing",
-                        help="Allow scheduling on stations which are in testing mode [default: False]",
-                        action="store_true")
-    parser.set_defaults(allow_testing=False)    
+    parser.add_argument(
+        "-T",
+        "--allow-testing",
+        help="Allow scheduling on stations which are in testing mode [default: False]",
+        action="store_true")
+    parser.set_defaults(allow_testing=False)
     parser.add_argument("-l",
                         "--log-level",
                         default="INFO",
@@ -157,11 +152,8 @@ def main():
         sys.exit()
 
     # Create or update the transmitter & TLE cache
-    cache = CacheManager(ground_station_id,
-                         ground_station['antenna'],
-                         settings.CACHE_DIR,
-                         settings.CACHE_AGE,
-                         settings.MAX_NORAD_CAT_ID)
+    cache = CacheManager(ground_station_id, ground_station['antenna'], settings.CACHE_DIR,
+                         settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
     cache.update()
 
     # Set minimum culmination elevation
@@ -189,7 +181,7 @@ def main():
                 min_riseset = args.min_riseset
     else:
         min_riseset = 0.0
-            
+
     # Set observer
     observer = create_observer(ground_station['lat'],
                                ground_station['lng'],
@@ -214,29 +206,29 @@ def main():
 
     # Loop over satellites
     for satellite in tqdm(satellites):
-        satellite_passes = find_passes(satellite,
-                                       observer,
-                                       tmin,
-                                       tmax,
-                                       min_culmination,
+        satellite_passes = find_passes(satellite, observer, tmin, tmax, min_culmination,
                                        min_pass_duration)
         for p in satellite_passes:
-            p.update({'satellite': {
-                        'name': str(satellite.name),
-                        'id': str(satellite.id),
-                        'tle1': str(satellite.tle1),
-                        'tle2': str(satellite.tle2)},
-                      'transmitter': {
-                        'uuid': satellite.transmitter,
-                        'success_rate': satellite.success_rate,
-                        'good_count': satellite.good_count,
-                        'data_count': satellite.data_count,
-                        'mode': satellite.mode},
-                    'scheduled': False})
+            p.update({
+                'satellite': {
+                    'name': str(satellite.name),
+                    'id': str(satellite.id),
+                    'tle1': str(satellite.tle1),
+                    'tle2': str(satellite.tle2)
+                },
+                'transmitter': {
+                    'uuid': satellite.transmitter,
+                    'success_rate': satellite.success_rate,
+                    'good_count': satellite.good_count,
+                    'data_count': satellite.data_count,
+                    'mode': satellite.mode
+                },
+                'scheduled': False
+            })
             passes.append(p)
 
     priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
-    
+
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
     logging.info("Found %d scheduled passes between %s and %s on ground station %d" %
@@ -260,8 +252,6 @@ def main():
     report_efficiency(scheduledpasses, passes)
 
     # Find unique objects
-    satids = sorted(set([satpass['satellite']['id'] for satpass in passes]))
-
     print_scheduledpass_summary(scheduledpasses, ground_station_id, printer=logging.info)
 
     # Login and schedule passes
@@ -273,12 +263,13 @@ def main():
         logging.info('Checking and scheduling passes as needed.')
         for satpass in tqdm(scheduledpasses_sorted):
             if not satpass['scheduled']:
-                logging.debug("Scheduling %05d %s %s %3.0f %4.3f %s %s" %
-                              (int(satpass['satellite']['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
-                               satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['altt']),
-                               satpass['priority'], satpass['transmitter']['uuid'], satpass['satellite']['name'].rstrip()))
-                schedule_observation(satpass['transmitter']['uuid'],
-                                     ground_station_id,
+                logging.debug(
+                    "Scheduling %05d %s %s %3.0f %4.3f %s %s" %
+                    (int(satpass['satellite']['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
+                     satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(
+                         satpass['altt']), satpass['priority'], satpass['transmitter']['uuid'],
+                     satpass['satellite']['name'].rstrip()))
+                schedule_observation(satpass['transmitter']['uuid'], ground_station_id,
                                      satpass['tr'].strftime("%Y-%m-%d %H:%M:%S"),
                                      satpass['ts'].strftime("%Y-%m-%d %H:%M:%S"))
 

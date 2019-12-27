@@ -1,7 +1,7 @@
-import ephem
 import math
+from datetime import timedelta
 
-from datetime import datetime, timedelta
+import ephem
 
 
 def overlap(satpass, scheduledpasses, wait_time_seconds):
@@ -50,12 +50,7 @@ def create_observer(lat, lon, alt, min_riseset=0.0):
     return observer
 
 
-def find_passes(satellite,
-                observer,
-                tmin,
-                tmax,
-                minimum_altitude,
-                min_pass_duration):
+def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_duration):
     passes = []
 
     # Set start time
@@ -98,8 +93,8 @@ def find_passes(satellite,
         # and not directly overhead (tr < ts see issue 199)
 
         if tr < ephem.date(tmax):
-            if (float(elevation) >= minimum_altitude and tr < ts and
-                    pass_duration > timedelta(minutes=min_pass_duration)):
+            if (float(elevation) >= minimum_altitude and tr < ts
+                    and pass_duration > timedelta(minutes=min_pass_duration)):
 
                 # get pass information
                 satpass = {

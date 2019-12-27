@@ -1,9 +1,8 @@
 import csv
 import logging
 import os
-import settings
 
-from auto_scheduler import Twolineelement, Satellite
+from auto_scheduler import Satellite, Twolineelement
 
 
 def read_priorities_transmitters(filename):
@@ -18,8 +17,7 @@ def read_priorities_transmitters(filename):
     satprio = {}
     sattrans = {}
     with open(filename, "r") as fp:
-        reader = csv.reader(filter(lambda row: row[0]!='#', fp),
-                            delimiter=' ')
+        reader = csv.reader(filter(lambda row: row[0] != '#', fp), delimiter=' ')
         for row in reader:
             if len(row) != 3:
                 # Skip malformed lines
@@ -46,14 +44,18 @@ def get_priority_passes(passes, priorities, favorite_transmitters, only_priority
             priority.append(satpass)
         elif only_priority:
             # Find satellite transmitter with highest number of good observations
-            max_good_count = max([s['transmitter']['good_count'] for s in passes if s['satellite']["id"] == satpass['satellite']["id"]])
+            max_good_count = max([
+                s['transmitter']['good_count'] for s in passes
+                if s['satellite']["id"] == satpass['satellite']["id"]
+            ])
             if max_good_count > 0:
                 satpass['priority'] = \
                     (float(satpass['altt']) / 90.0) \
                     * satpass['transmitter']['success_rate'] \
                     * float(satpass['transmitter']['good_count']) / max_good_count
             else:
-                satpass['priority'] = (float(satpass['altt']) / 90.0) * satpass['transmitter']['success_rate']
+                satpass['priority'] = (float(satpass['altt']) /
+                                       90.0) * satpass['transmitter']['success_rate']
 
             # Add if priority is high enough
             if satpass['priority'] >= min_priority:
@@ -69,29 +71,22 @@ def satellites_from_transmitters(transmitters, tles):
     for transmitter in transmitters:
         for tle in tles:
             if tle['norad_cat_id'] == transmitter['norad_cat_id']:
-                satellites.append(Satellite(Twolineelement(*tle['lines']),
-                                            transmitter['uuid'],
-                                            transmitter['success_rate'],
-                                            transmitter['good_count'],
-                                            transmitter['data_count'],
-                                            transmitter['mode']))
+                satellites.append(
+                    Satellite(Twolineelement(*tle['lines']), transmitter['uuid'],
+                              transmitter['success_rate'], transmitter['good_count'],
+                              transmitter['data_count'], transmitter['mode']))
     return satellites
 
 
 def print_scheduledpass_summary(scheduledpasses, ground_station_id, printer=print):
     printer("GS  | Sch | NORAD | Start time          | End time            |  El | " +
-                 "Priority | Transmitter UUID       | Mode       | Satellite name ")
+            "Priority | Transmitter UUID       | Mode       | Satellite name ")
 
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         printer(
-            "%3d | %3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %-10s | %s"%(
-             ground_station_id,
-             satpass['scheduled'],
-             int(satpass['satellite']['id']),
-             satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
-             satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"),
-             float(satpass['altt']) if satpass['altt'] else 0.,
-             satpass.get('priority', 0.0),
-             satpass['transmitter'].get('uuid', ''),
-             satpass['transmitter'].get('mode', ''),
-             satpass['satellite']['name'].rstrip()))
+            "%3d | %3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %-10s | %s" %
+            (ground_station_id, satpass['scheduled'], int(
+                satpass['satellite']['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
+             satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['altt']) if satpass['altt']
+             else 0., satpass.get('priority', 0.0), satpass['transmitter'].get('uuid', ''),
+             satpass['transmitter'].get('mode', ''), satpass['satellite']['name'].rstrip()))

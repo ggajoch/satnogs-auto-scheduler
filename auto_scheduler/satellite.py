@@ -16,10 +16,5 @@ class Satellite:
         self.mode = mode
 
     def __repr__(self):
-        return "%s %s %d %d %d %s %s" % (self.id,
-                                         self.transmitter,
-                                         self.success_rate,
-                                         self.good_count,
-                                         self.data_count,
-                                         self.mode,
-                                         self.name)
+        return "%s %s %d %d %d %s %s" % (self.id, self.transmitter, self.success_rate,
+                                         self.good_count, self.data_count, self.mode, self.name)

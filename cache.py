@@ -1,19 +1,14 @@
-import os
 import logging
+import os
 from datetime import datetime
 
 from satellite_tle import fetch_tles
-from satnogs_client import get_active_transmitter_info, \
-                           get_satellite_info, \
-                           get_transmitter_stats
+from satnogs_client import get_active_transmitter_info, get_satellite_info, \
+    get_transmitter_stats
 
 
 class CacheManager:
-    def __init__(self,
-                 ground_station_id,
-                 ground_station_antennas,
-                 cache_dir,
-                 cache_age,
+    def __init__(self, ground_station_id, ground_station_antennas, cache_dir, cache_age,
                  max_norad_cat_id):
         self.ground_station_id = ground_station_id
         self.ground_station_antennas = ground_station_antennas
@@ -21,9 +16,11 @@ class CacheManager:
         self.cache_age = cache_age
         self.max_norad_cat_id = max_norad_cat_id
 
-        self.transmitters_file = os.path.join(self.cache_dir, "transmitters_%d.txt" % self.ground_station_id)
+        self.transmitters_file = os.path.join(self.cache_dir,
+                                              "transmitters_%d.txt" % self.ground_station_id)
         self.tles_file = os.path.join(self.cache_dir, "tles_%d.txt" % self.ground_station_id)
-        self.last_update_file = os.path.join(self.cache_dir, "last_update_%d.txt" % ground_station_id)
+        self.last_update_file = os.path.join(self.cache_dir,
+                                             "last_update_%d.txt" % ground_station_id)
 
         # Create cache
         if not os.path.isdir(self.cache_dir):
@@ -77,8 +74,8 @@ class CacheManager:
         norad_cat_ids = sorted(
             set([
                 transmitter["norad_cat_id"] for transmitter in transmitters.values()
-                if transmitter["norad_cat_id"] < self.max_norad_cat_id and
-                transmitter["norad_cat_id"] in alive_norad_cat_ids
+                if transmitter["norad_cat_id"] < self.max_norad_cat_id
+                and transmitter["norad_cat_id"] in alive_norad_cat_ids
             ]))
 
         # Store transmitters
@@ -94,10 +91,10 @@ class CacheManager:
             if transmitters[uuid]["norad_cat_id"] not in alive_norad_cat_ids:
                 continue
 
-            fp.write(
-                "%05d %s %d %d %d %s\n" %
-                (transmitters[uuid]["norad_cat_id"], uuid, transmitter["stats"]["success_rate"],
-                 transmitter["stats"]["good_count"], transmitter["stats"]["total_count"], transmitters[uuid]["mode"]))
+            fp.write("%05d %s %d %d %d %s\n" %
+                     (transmitters[uuid]["norad_cat_id"], uuid,
+                      transmitter["stats"]["success_rate"], transmitter["stats"]["good_count"],
+                      transmitter["stats"]["total_count"], transmitters[uuid]["mode"]))
 
         logging.info("Transmitter success rates received!")
         fp.close()
@@ -123,16 +120,17 @@ class CacheManager:
                 else:
                     norad_cat_id = int(tle1.split(" ")[1][:5])
 
-                yield {'norad_cat_id': norad_cat_id,
-                       'lines': [tle0, tle1, tle2]}
+                yield {'norad_cat_id': norad_cat_id, 'lines': [tle0, tle1, tle2]}
 
     def read_transmitters(self):
         with open(self.transmitters_file, "r") as f:
             for line in f.readlines():
                 item = line.split()
-                yield {"norad_cat_id": int(item[0]),
-                       "uuid": item[1],
-                       "success_rate": float(item[2]) / 100.0,
-                       "good_count": int(item[3]),
-                       "data_count": int(item[4]),
-                       "mode": item[5]}
+                yield {
+                    "norad_cat_id": int(item[0]),
+                    "uuid": item[1],
+                    "success_rate": float(item[2]) / 100.0,
+                    "good_count": int(item[3]),
+                    "data_count": int(item[4]),
+                    "mode": item[5]
+                }

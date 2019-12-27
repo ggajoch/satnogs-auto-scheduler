@@ -1,9 +1,9 @@
-import requests
 import logging
-from datetime import datetime
-import lxml
-import settings
 import sys
+from datetime import datetime
+
+import requests
+import settings
 
 
 def get_paginated_endpoint(url, max_entries=None):
@@ -49,7 +49,11 @@ def get_active_transmitter_info(fmin, fmax):
     for o in r.json():
         if o["downlink_low"]:
             if o["status"] == "active" and o["downlink_low"] > fmin and o["downlink_low"] <= fmax:
-                transmitter = {"norad_cat_id": o["norad_cat_id"], "uuid": o["uuid"], "mode": o["mode"]}
+                transmitter = {
+                    "norad_cat_id": o["norad_cat_id"],
+                    "uuid": o["uuid"],
+                    "mode": o["mode"]
+                }
                 transmitters.append(transmitter)
     logging.info("Transmitters filtered based on ground station capability.")
     return transmitters
@@ -66,9 +70,8 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     client = requests.session()
 
     # Loop
-    start = True
-    next_url = '{}/api/observations/?ground_station={:d}'.format(
-                settings.NETWORK_BASE_URL, ground_station)
+    next_url = '{}/api/observations/?ground_station={:d}'.format(settings.NETWORK_BASE_URL,
+                                                                 ground_station)
     scheduledpasses = []
 
     logging.info("Requesting scheduled passes for ground station %d" % ground_station)
@@ -142,21 +145,21 @@ def get_groundstation_info(ground_station_id, allow_testing):
     else:
         if station['status'] == 'Testing' and not allow_testing:
             logging.info("Ground station {} is in testing mode but auto-scheduling is not "
-                         "allowed. Use -T command line argument to enable scheduling.".format(ground_station_id))
+                         "allowed. Use -T command line argument to enable scheduling.".format(
+                             ground_station_id))
         else:
             logging.info("Ground station {} neither in 'online' nor in 'testing' mode, "
                          "can't schedule!".format(ground_station_id))
         return {}
 
 
-def schedule_observation(uuid,
-                         ground_station_id,
-                         starttime,
-                         endtime):
-    observation = [{'ground_station': ground_station_id,
-                    'transmitter_uuid': uuid,
-                    'start': starttime,
-                    'end': endtime}]
+def schedule_observation(uuid, ground_station_id, starttime, endtime):
+    observation = [{
+        'ground_station': ground_station_id,
+        'transmitter_uuid': uuid,
+        'start': starttime,
+        'end': endtime
+    }]
     try:
         r = requests.post('{}/api/observations/'.format(settings.NETWORK_BASE_URL),
                           json=observation,
