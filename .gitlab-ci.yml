@@ -9,4 +9,4 @@ static:
   before_script:
     - pip install "$GITLAB_CI_PYPI_TOX"
   script:
-    - tox -e "py3-flake8,isort,yapf"
+    - tox -e "py3-flake8,isort,yapf,pylint"
