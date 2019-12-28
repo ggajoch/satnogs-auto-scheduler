@@ -153,19 +153,28 @@ def get_groundstation_info(ground_station_id, allow_testing):
         return {}
 
 
-def schedule_observation(uuid, ground_station_id, starttime, endtime):
-    observation = [{
-        'ground_station': ground_station_id,
-        'transmitter_uuid': uuid,
-        'start': starttime,
-        'end': endtime
-    }]
+def schedule_observations(observations):
+    """
+    Schedule observations on satnogs-network.
+
+    observations: list of dicts, keys:
+      - ground_station_id: ground station id - int
+      - transmitter_uuid: transmitter uuid - str
+      - start: observation start - datetime
+      - end: observation end - datetime
+    """
+    observations_serialized = list({
+        'ground_station': satpass['ground_station_id'],
+        'transmitter_uuid': satpass['transmitter_uuid'],
+        'start': satpass['start'].strftime("%Y-%m-%d %H:%M:%S"),
+        'end': satpass['end'].strftime("%Y-%m-%d %H:%M:%S")
+    } for satpass in observations)
     try:
         r = requests.post('{}/api/observations/'.format(settings.NETWORK_BASE_URL),
-                          json=observation,
+                          json=observations_serialized,
                           headers={'Authorization': 'Token {}'.format(settings.SATNOGS_API_TOKEN)})
         r.raise_for_status()
-        logging.debug("Scheduled!")
+        logging.debug("Scheduled {} passes!".format(len(observations_serialized)))
     except requests.HTTPError:
         err = r.json()
-        logging.info("Failed to schedule pass: {}".format(err))
+        logging.error("Failed to schedule the passes. Reason: {}".format(err))

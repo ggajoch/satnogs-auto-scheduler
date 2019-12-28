@@ -11,7 +11,7 @@ from auto_scheduler.pass_predictor import create_observer, find_passes
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
 from cache import CacheManager
 from satnogs_client import get_groundstation_info, \
-    get_scheduled_passes_from_network, schedule_observation
+    get_scheduled_passes_from_network, schedule_observations
 from tqdm import tqdm
 from utils import get_priority_passes, print_scheduledpass_summary, \
     read_priorities_transmitters, satellites_from_transmitters
@@ -251,29 +251,22 @@ def main():
     # Report scheduling efficiency
     report_efficiency(scheduledpasses, passes)
 
-    # Find unique objects
     print_scheduledpass_summary(scheduledpasses, ground_station_id, printer=logging.info)
 
     # Login and schedule passes
-    schedule_needed = any([not satpass['scheduled'] for satpass in scheduledpasses])
-    if schedule and schedule_needed:
-        # Sort passes
-        scheduledpasses_sorted = sorted(scheduledpasses, key=lambda satpass: satpass['tr'])
+    passes_schedule = sorted((satpass for satpass in scheduledpasses if not satpass['scheduled']),
+                             key=lambda satpass: satpass['tr'])
+    if schedule and passes_schedule:
+        logging.info('Scheduling all unscheduled passes listed above.')
+        observations = ({
+            'ground_station_id': ground_station_id,
+            'transmitter_uuid': satpass['transmitter']['uuid'],
+            'start': satpass['tr'],
+            'end': satpass['ts']
+        } for satpass in passes_schedule)
+        schedule_observations(observations)
 
-        logging.info('Checking and scheduling passes as needed.')
-        for satpass in tqdm(scheduledpasses_sorted):
-            if not satpass['scheduled']:
-                logging.debug(
-                    "Scheduling %05d %s %s %3.0f %4.3f %s %s" %
-                    (int(satpass['satellite']['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
-                     satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(
-                         satpass['altt']), satpass['priority'], satpass['transmitter']['uuid'],
-                     satpass['satellite']['name'].rstrip()))
-                schedule_observation(satpass['transmitter']['uuid'], ground_station_id,
-                                     satpass['tr'].strftime("%Y-%m-%d %H:%M:%S"),
-                                     satpass['ts'].strftime("%Y-%m-%d %H:%M:%S"))
-
-        logging.info("All passes are scheduled. Exiting!")
+    logging.info("Done.")
 
 
 if __name__ == '__main__':
