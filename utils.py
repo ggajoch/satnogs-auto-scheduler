@@ -84,8 +84,8 @@ def print_scheduledpass_summary(scheduledpasses, ground_station_id, printer=prin
 
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         printer(
-            "%3d | %3.d | %05d | %s | %s | %3.0f | %4.6f | %s | %-10s | %s" %
-            (ground_station_id, satpass['scheduled'], int(
+            "%3d | %3s | %05d | %s | %s | %3.0f | %4.6f | %s | %-10s | %s" %
+            (ground_station_id, 'Y' if satpass['scheduled'] else 'N', int(
                 satpass['satellite']['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
              satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), float(satpass['altt']) if satpass['altt']
              else 0., satpass.get('priority', 0.0), satpass['transmitter'].get('uuid', ''),
