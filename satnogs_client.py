@@ -153,7 +153,7 @@ def get_groundstation_info(ground_station_id, allow_testing):
         return {}
 
 
-def schedule_observations(observations):
+def schedule_observations_batch(observations):
     """
     Schedule observations on satnogs-network.
 
@@ -177,4 +177,31 @@ def schedule_observations(observations):
         logging.debug("Scheduled {} passes!".format(len(observations_serialized)))
     except requests.HTTPError:
         err = r.json()
-        logging.error("Failed to schedule the passes. Reason: {}".format(err))
+        logging.error("Failed to batch-schedule the passes. Reason: {}".format(err))
+        logging.error("Fall-back to single-pass scheduling.")
+        schedule_observations(observations_serialized)
+
+
+def schedule_observations(observations_serialized):
+    """
+    Schedule observations on satnogs-network.
+
+    observations: list of dicts, keys:
+      - ground_station: ground station id - int
+      - transmitter_uuid: transmitter uuid - str
+      - start: observation start - str, "%Y-%m-%d %H:%M:%S"
+      - end: observation end - str, "%Y-%m-%d %H:%M:%S"
+    """
+
+    for observation in observations_serialized:
+        try:
+            r = requests.post(
+                '{}/api/observations/'.format(settings.NETWORK_BASE_URL),
+                json=[observation],
+                headers={'Authorization': 'Token {}'.format(settings.SATNOGS_API_TOKEN)})
+            r.raise_for_status()
+            logging.debug("Scheduled pass!")
+        except requests.HTTPError:
+            err = r.json()
+            logging.error("Failed to schedule the pass at {}. Reason: {}".format(
+                observation['end'], err))

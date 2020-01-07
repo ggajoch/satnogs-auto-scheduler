@@ -11,7 +11,7 @@ from auto_scheduler.pass_predictor import create_observer, find_passes
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
 from cache import CacheManager
 from satnogs_client import get_groundstation_info, \
-    get_scheduled_passes_from_network, schedule_observations
+    get_scheduled_passes_from_network, schedule_observations_batch
 from tqdm import tqdm
 from utils import get_priority_passes, print_scheduledpass_summary, \
     read_priorities_transmitters, satellites_from_transmitters
@@ -264,7 +264,7 @@ def main():
             'start': satpass['tr'],
             'end': satpass['ts']
         } for satpass in passes_schedule)
-        schedule_observations(observations)
+        schedule_observations_batch(observations)
 
     logging.info("Done.")
 
