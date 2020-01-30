@@ -1,13 +1,18 @@
 # auto-scheduler
 
-This is a tool to automatically compute passes of satellites on the
-SatNOGS network. It uses code from the SatNOGS network scheduler. It requires
-[python-satellitetle](https://gitlab.com/librespacefoundation/python-satellitetle) for downloading TLEs.
+This is a tool to automatically compute passes of satellites and schedule observations on the
+[SatNOGS Network](https://network.satnogs.org/). It is based on the scheduling code from
+SatNOGS network and requires [python-satellitetle](https://gitlab.com/librespacefoundation/python-satellitetle) for downloading TLEs.
 
 ## Dependencies
 
+You will need Python 3 and the Python virtualenv utility. The following example assumes that you are using Debian.
+
 ```bash
-sudo apt-get install libxml2-dev libxslt1-dev
+sudo apt-get update
+sudo apt-get install virtualenv python3-virtualenv
+virtualenv -p python3 env
+source env/bin/activate
 pip install -r requirements.txt
 ```
 
