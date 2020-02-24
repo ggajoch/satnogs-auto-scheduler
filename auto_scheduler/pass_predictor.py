@@ -119,3 +119,116 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
             keep_digging = False
 
     return passes
+
+
+def constrain_pass_to_az_window(satellite, observer, satpass, start_azimuth, stop_azimuth,
+                                min_pass_duration):
+    """
+    Modifies the observation start/stop time to satisfy azimuth viewing window constraints.
+    For example, if there is an obstruction covering the start of the pass then the pass start time
+    will be adjusted to begin only when the satellite has cleared the obstruction. This can result
+    in shorter observations and more time-efficient scheduling.
+    :param satellite: Satellite object the satpass is for
+    :param observer: Observer
+    :param satpass: Satpass to be adjusted to fit within the viewing window. Modified in-place.
+    :param start_azimuth: Start of the viewing window. Viewing window is the area covered by a
+    clockwise sweep from the start angle to the end angle.
+    :param stop_azimuth: End of the viewing window.
+    :param min_pass_duration: Minimum pass duration in minutes. Passes shorter than this are
+    discarded.
+    :return: The modified satpass object that satisfies the viewing window constraint, or None if
+    it is impossible to satisfy the viewing window and minimum pass duration constraints
+    """
+
+    # How much the start/stop time should be incremented by each step while finding the
+    # parameters for the constrained pass. Larger values will solve quicker but will result in a
+    # worse solution.
+    sweep_step_size = timedelta(seconds=1)
+
+    # Load TLE
+    try:
+        sat_ephem = ephem.readtle(str(satellite.tle0), str(satellite.tle1), str(satellite.tle2))
+    except (ValueError, AttributeError):
+        return None
+
+    # Sweep the start of pass time forwards until the azimuth constraint is met, or another
+    # constraint fails
+    azr_within_window = False
+    while not azr_within_window:
+        # Set pass start time
+        observer.date = ephem.date(satpass['tr'])
+        sat_ephem.compute(observer)
+
+        # Convert to degrees
+        satpass['azr'] = format(math.degrees(sat_ephem.az), '.0f')
+        pass_duration = satpass['ts'] - satpass['tr']
+
+        azr_within_window = check_az_in_window(float(satpass['azr']), start_azimuth, stop_azimuth)
+
+        if not azr_within_window:
+            # Change the pass start time for the next iteration
+            satpass['tr'] += sweep_step_size
+
+        if pass_duration < timedelta(minutes=min_pass_duration):
+            return None
+
+    # Sweep the end of pass time backwards until the azimuth constraint is met, or another
+    # constraint fails
+    azr_within_window = False
+    while not azr_within_window:
+        # Set pass stop time
+        observer.date = ephem.date(satpass['ts'])
+        sat_ephem.compute(observer)
+
+        # Convert to degrees
+        satpass['azs'] = format(math.degrees(sat_ephem.az), '.0f')
+
+        azr_within_window = check_az_in_window(float(satpass['azs']), start_azimuth, stop_azimuth)
+        pass_duration = satpass['ts'] - satpass['tr']
+
+        if not azr_within_window:
+            # Change the pass stop time for the next iteration
+            satpass['ts'] -= sweep_step_size
+
+        if pass_duration < timedelta(minutes=min_pass_duration):
+            return None
+
+    return satpass
+
+
+def check_az_in_window(azimuth, start_azimuth, stop_azimuth):
+    """
+    Determines whether a given azimuth angle is between two specified start/stop azimuth angles.
+    In effect, checks that an azimuth is within an acceptable viewing window.
+    :param azimuth: Azimuth to be tested
+    :param start_azimuth: Start of the viewing window. Viewing window is the area covered by a
+    clockwise sweep from the start angle to the end angle.
+    :param stop_azimuth: End of the viewing window.
+    :return: True if the specified azimuth is contained inside the viewing window.
+    """
+
+    # Determine if the specified viewing window crosses zero degrees
+    # If so, we perform the window check with a complementary window and invert the result
+    if start_azimuth > stop_azimuth:
+        complementary_window = True
+
+        # Swap start and stop which inverts the window and avoids the zero crossing
+        temp = start_azimuth
+        start_azimuth = stop_azimuth
+        stop_azimuth = temp
+    else:
+        complementary_window = False
+
+    # Check if the specified azimuth is inside the window
+    if start_azimuth <= azimuth <= stop_azimuth:
+        # Azimuth is within the window (normal or complementary)
+        if complementary_window:
+            return False
+        else:
+            return True
+
+    # Azimuth is outside the window (normal or complementary)
+    if complementary_window:
+        return True
+    else:
+        return False

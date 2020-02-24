@@ -7,7 +7,8 @@ import sys
 from datetime import datetime, timedelta
 
 import settings
-from auto_scheduler.pass_predictor import create_observer, find_passes
+from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
+    create_observer, find_passes
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
 from cache import CacheManager
 from satnogs_client import get_groundstation_info, \
@@ -63,6 +64,20 @@ def main():
                         "--horizon",
                         help="Force rise/set elevation to 0 degrees (overrided -r).",
                         action="store_true")
+    parser.add_argument("-b",
+                        "--start-azimuth",
+                        help="Start of the azimuth window to observe within. Window goes from start"
+                        "to stop azimuth in a clockwise direction. [degrees; default: 0, "
+                        "maximum: 360]",
+                        type=float,
+                        default=0.0)
+    parser.add_argument("-e",
+                        "--stop-azimuth",
+                        help="End of the azimuth window to observe within. Window goes from start "
+                        "to stop azimuth in a clockwise direction. [degrees; default: 360, "
+                        "maximum: 360]",
+                        type=float,
+                        default=360.0)
     parser.add_argument("-f",
                         "--only-priority",
                         help="Schedule only priority satellites (from -P file)",
@@ -182,6 +197,26 @@ def main():
     else:
         min_riseset = 0.0
 
+    # Set start azimuth viewing window
+    if args.start_azimuth < 0.0:
+        logging.warning("Azimuth window not in range [0, 360] degrees. Setting to 0 degrees.")
+        start_azimuth = 0.0
+    elif args.start_azimuth > 360.0:
+        logging.warning("Azimuth window not in range [0, 360] degrees. Setting to 360 degrees.")
+        start_azimuth = 360.0
+    else:
+        start_azimuth = args.start_azimuth
+
+    # Set stop azimuth viewing window
+    if args.stop_azimuth < 0.0:
+        logging.warning("Azimuth window not in the range [0, 360] degrees. Setting to 0 degrees.")
+        stop_azimuth = 0.0
+    elif args.stop_azimuth > 360.0:
+        logging.warning("Azimuth window not in the range [0, 360] degrees. Setting to 360 degrees.")
+        stop_azimuth = 360.0
+    else:
+        stop_azimuth = args.stop_azimuth
+
     # Set observer
     observer = create_observer(ground_station['lat'],
                                ground_station['lng'],
@@ -209,6 +244,17 @@ def main():
         satellite_passes = find_passes(satellite, observer, tmin, tmax, min_culmination,
                                        min_pass_duration)
         for p in satellite_passes:
+            # Constrain the passes to be within the allowable viewing window
+            logging.debug("Original pass is azr %f and azs %f", float(p['azr']), float(p['azs']))
+            p = constrain_pass_to_az_window(satellite, observer, p, start_azimuth, stop_azimuth,
+                                            min_pass_duration)
+
+            if not p:
+                logging.debug("Pass did not meet azimuth window requirements. Removed.")
+                continue
+            logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",
+                          float(p['azr']), float(p['azs']))
+
             p.update({
                 'satellite': {
                     'name': str(satellite.name),
