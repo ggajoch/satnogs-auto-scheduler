@@ -174,8 +174,8 @@ def constrain_pass_to_az_window(satellite, observer, satpass, start_azimuth, sto
 
     # Sweep the end of pass time backwards until the azimuth constraint is met, or another
     # constraint fails
-    azr_within_window = False
-    while not azr_within_window:
+    azs_within_window = False
+    while not azs_within_window:
         # Set pass stop time
         observer.date = ephem.date(satpass['ts'])
         sat_ephem.compute(observer)
@@ -183,10 +183,10 @@ def constrain_pass_to_az_window(satellite, observer, satpass, start_azimuth, sto
         # Convert to degrees
         satpass['azs'] = format(math.degrees(sat_ephem.az), '.0f')
 
-        azr_within_window = check_az_in_window(float(satpass['azs']), start_azimuth, stop_azimuth)
+        azs_within_window = check_az_in_window(float(satpass['azs']), start_azimuth, stop_azimuth)
         pass_duration = satpass['ts'] - satpass['tr']
 
-        if not azr_within_window:
+        if not azs_within_window:
             # Change the pass stop time for the next iteration
             satpass['ts'] -= sweep_step_size
 
