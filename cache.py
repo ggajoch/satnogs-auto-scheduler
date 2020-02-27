@@ -2,9 +2,9 @@ import logging
 import os
 from datetime import datetime
 
+from auto_scheduler.satnogs_client import get_active_transmitter_info, \
+    get_satellite_info, get_transmitter_stats
 from satellite_tle import fetch_tles
-from satnogs_client import get_active_transmitter_info, get_satellite_info, \
-    get_transmitter_stats
 
 
 class CacheManager:
