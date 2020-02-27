@@ -1,5 +1,0 @@
-ephem
-satellitetle>=0.7.0
-requests
-tqdm
-python-decouple
