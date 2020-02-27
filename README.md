@@ -4,7 +4,7 @@ This is a tool to automatically compute passes of satellites and schedule observ
 [SatNOGS Network](https://network.satnogs.org/). It is based on the scheduling code from
 SatNOGS network and requires [python-satellitetle](https://gitlab.com/librespacefoundation/python-satellitetle) for downloading TLEs.
 
-## Dependencies
+## Installation
 
 You will need Python 3 and the Python virtualenv utility. The following example assumes that you are using Debian.
 
@@ -13,7 +13,7 @@ sudo apt-get update
 sudo apt-get install virtualenv python3-virtualenv libxml2-dev libxslt1-dev
 virtualenv -p python3 env
 source env/bin/activate
-pip install -r requirements.txt
+pip install .
 ```
 
 ## Configuration
