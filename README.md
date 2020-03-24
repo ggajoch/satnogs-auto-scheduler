@@ -60,7 +60,7 @@ crontab -e
 
 Add a line like this - execute the scheduling script on each full hour:
 ```bash
-0 */1 * * * <path_to_auto_scheduler>/schedule_single_station.py -s <station_id> -d 1.2 -P <path_to_priority_list>/<priority_file>.txt -f -z
+0 */1 * * * <path_to_auto_scheduler>/env/bin/python <path_to_auto_scheduler>/schedule_single_station.py -s <station_id> -d 1.2 -P <path_to_priority_list>/<priority_file>.txt -f -z
 ```
 
 Omit the `-f` option to also fill in the gaps, but be aware if using a rotator setup! This will wear-out your rotator very quickly!
