@@ -1,0 +1,9 @@
+# CSV list of prefered sats by name or transmission type
+# 1 - SAT name or mode of transmission
+# 2 - min level of success reading from 0 to 100
+# 3 - priority from 0.0 to 1.0
+
+APT, 80, 0.8
+NOAA, 90, 1.0
+DUV, 75, 0.5
+CW, 88, 0.75
