@@ -10,7 +10,7 @@ You will need Python 3 and the Python virtualenv utility. The following example 
 
 ```bash
 sudo apt-get update
-sudo apt-get install virtualenv python3-virtualenv
+sudo apt-get install virtualenv python3-virtualenv libxml2-dev libxslt1-dev
 virtualenv -p python3 env
 source env/bin/activate
 pip install -r requirements.txt
