@@ -18,20 +18,20 @@ pip install -r requirements.txt
 
 ## Configuration
 
-Copy the env-dist file to .env and set your SatNOGS Network API token.
+Copy the env-dist file to .env and edit this file to add your SatNOGS Network API token.
 
 ## Test run
 
 Perform a test run to download orbital elements and transmitter priorities (these are stored in `/tmp/cache`) with
 
 ```bash
-schedule_single_station.py -s <ground station ID> -n
+./schedule_single_station.py -s <ground station ID> -n
 ```
 
 The `-n` option computes the passes but does not schedule them. To schedule these passes, run
 
 ```bash
-schedule_single_station.py -s <ground station ID>
+./schedule_single_station.py -s <ground station ID>
 ```
 
 ## Setup priority scheduling
