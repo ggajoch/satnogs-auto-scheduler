@@ -1,3 +1,5 @@
+[MASTER]
+ignore=_version.py
 [MESSAGE CONTROL]
 disable=
     C0111, # missing-docstring

@@ -1,4 +1,4 @@
-satnogsclient/_version.py
+auto_scheduler/_version.py
 .tox
 build
 docs
