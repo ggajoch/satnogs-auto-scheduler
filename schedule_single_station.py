@@ -7,9 +7,9 @@ import sys
 from datetime import datetime, timedelta
 
 import settings
+from auto_scheduler import __version__ as auto_scheduler_version
 from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
     create_observer, find_passes
-from auto_scheduler import __version__ as auto_scheduler_version
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
 from cache import CacheManager
 from satnogs_client import get_groundstation_info, \
