@@ -15,10 +15,10 @@ from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
 from auto_scheduler.satnogs_client import get_groundstation_info, \
     get_scheduled_passes_from_network, schedule_observations_batch
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
+from auto_scheduler.utils import get_priority_passes, \
+    print_scheduledpass_summary, satellites_from_transmitters
 from cache import CacheManager
 from tqdm import tqdm
-from utils import get_priority_passes, print_scheduledpass_summary, \
-    satellites_from_transmitters
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
