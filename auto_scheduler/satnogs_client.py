@@ -120,7 +120,7 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
             # Last fetched observation is older than the ROI for scheduling, end loop.
             break
 
-    logger.info("Scheduled passes for ground station %d retrieved!" % ground_station)
+    logger.info("Scheduled passes for ground station %d retrieved!", ground_station)
     return scheduledpasses
 
 
@@ -148,11 +148,12 @@ def get_groundstation_info(ground_station_id, allow_testing):
 
     if station['status'] == 'Testing' and not allow_testing:
         logger.info(
-            "Ground station {} is in testing mode but auto-scheduling is not "
-            "allowed. Use -T command line argument to enable scheduling.".format(ground_station_id))
+            "Ground station %d is in testing mode but auto-scheduling is not "
+            "allowed. Use -T command line argument to enable scheduling.", ground_station_id)
     else:
-        logger.info("Ground station {} neither in 'online' nor in 'testing' mode, "
-                    "can't schedule!".format(ground_station_id))
+        logger.info(
+            "Ground station %d neither in 'online' nor in 'testing' mode, "
+            "can't schedule!", ground_station_id)
     return {}
 
 
@@ -172,15 +173,16 @@ def schedule_observations_batch(observations):
         'start': satpass['start'].strftime("%Y-%m-%d %H:%M:%S"),
         'end': satpass['end'].strftime("%Y-%m-%d %H:%M:%S")
     } for satpass in observations)
+
     try:
         r = requests.post('{}/api/observations/'.format(settings.NETWORK_BASE_URL),
                           json=observations_serialized,
                           headers={'Authorization': 'Token {}'.format(settings.SATNOGS_API_TOKEN)})
         r.raise_for_status()
-        logger.debug("Scheduled {} passes!".format(len(observations_serialized)))
+        logger.debug("Scheduled %d passes!", len(observations_serialized))
     except requests.HTTPError:
         err = r.json()
-        logger.error("Failed to batch-schedule the passes. Reason: {}".format(err))
+        logger.error("Failed to batch-schedule the passes. Reason: %s", err)
         logger.error("Fall-back to single-pass scheduling.")
         schedule_observations(observations_serialized)
 
@@ -195,7 +197,6 @@ def schedule_observations(observations_serialized):
       - start: observation start - str, "%Y-%m-%d %H:%M:%S"
       - end: observation end - str, "%Y-%m-%d %H:%M:%S"
     """
-
     for observation in observations_serialized:
         try:
             r = requests.post(
@@ -206,5 +207,4 @@ def schedule_observations(observations_serialized):
             logger.debug("Scheduled pass!")
         except requests.HTTPError:
             err = r.json()
-            logger.error("Failed to schedule the pass at {}. Reason: {}".format(
-                observation['end'], err))
+            logger.error("Failed to schedule the pass at %s. Reason: %s", observation['end'], err)
