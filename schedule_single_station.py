@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 
 import settings
 from auto_scheduler import __version__ as auto_scheduler_version
+from auto_scheduler.io import read_priorities_transmitters, read_tles, \
+    read_transmitters
 from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
     create_observer, find_passes
 from auto_scheduler.satnogs_client import get_groundstation_info, \
@@ -16,7 +18,7 @@ from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
 from cache import CacheManager
 from tqdm import tqdm
 from utils import get_priority_passes, print_scheduledpass_summary, \
-    read_priorities_transmitters, satellites_from_transmitters
+    satellites_from_transmitters
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
@@ -231,10 +233,10 @@ def main():
     min_pass_duration = settings.MIN_PASS_DURATION
 
     # Read tles
-    tles = list(cache.read_tles())
+    tles = list(read_tles(cache.tles_file))
 
     # Read transmitters
-    transmitters = cache.read_transmitters()
+    transmitters = read_transmitters(cache.transmitters_file)
 
     # Extract interesting satellites from receivable transmitters
     satellites = satellites_from_transmitters(transmitters, tles)

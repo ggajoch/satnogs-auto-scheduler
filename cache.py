@@ -106,31 +106,3 @@ class CacheManager:
         with open(self.tles_file, "w") as f:
             for norad_cat_id, (source, tle) in tles.items():
                 f.write("%s\n%s\n%s\n" % (tle[0], tle[1], tle[2]))
-
-    def read_tles(self):
-        with open(self.tles_file, "r") as f:
-            lines = f.readlines()
-            for i in range(0, len(lines), 3):
-                tle0 = lines[i]
-                tle1 = lines[i + 1]
-                tle2 = lines[i + 2]
-
-                if tle1.split(" ")[1] == "":
-                    norad_cat_id = int(tle1.split(" ")[2][:4])
-                else:
-                    norad_cat_id = int(tle1.split(" ")[1][:5])
-
-                yield {'norad_cat_id': norad_cat_id, 'lines': [tle0, tle1, tle2]}
-
-    def read_transmitters(self):
-        with open(self.transmitters_file, "r") as f:
-            for line in f.readlines():
-                item = line.split()
-                yield {
-                    "norad_cat_id": int(item[0]),
-                    "uuid": item[1],
-                    "success_rate": float(item[2]) / 100.0,
-                    "good_count": int(item[3]),
-                    "data_count": int(item[4]),
-                    "mode": item[5]
-                }
