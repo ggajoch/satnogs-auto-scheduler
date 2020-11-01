@@ -1,5 +1,5 @@
 variables:
-  GITLAB_CI_IMAGE_PYTHON3: 'python:3'
+  GITLAB_CI_IMAGE_PYTHON3: 'python:3.8'
   GITLAB_CI_PYPI_TOX: 'tox~=3.8.0'
 stages:
   - static
