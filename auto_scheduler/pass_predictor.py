@@ -213,22 +213,14 @@ def check_az_in_window(azimuth, start_azimuth, stop_azimuth):
         complementary_window = True
 
         # Swap start and stop which inverts the window and avoids the zero crossing
-        temp = start_azimuth
-        start_azimuth = stop_azimuth
-        stop_azimuth = temp
+        start_azimuth, stop_azimuth = stop_azimuth, start_azimuth
     else:
         complementary_window = False
 
     # Check if the specified azimuth is inside the window
     if start_azimuth <= azimuth <= stop_azimuth:
         # Azimuth is within the window (normal or complementary)
-        if complementary_window:
-            return False
-        else:
-            return True
+        return not complementary_window
 
     # Azimuth is outside the window (normal or complementary)
-    if complementary_window:
-        return True
-    else:
-        return False
+    return complementary_window
