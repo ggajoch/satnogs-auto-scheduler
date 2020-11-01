@@ -145,15 +145,15 @@ def get_groundstation_info(ground_station_id, allow_testing):
 
     if station['status'] == 'Online' or (station['status'] == 'Testing' and allow_testing):
         return station
+
+    if station['status'] == 'Testing' and not allow_testing:
+        logger.info(
+            "Ground station {} is in testing mode but auto-scheduling is not "
+            "allowed. Use -T command line argument to enable scheduling.".format(ground_station_id))
     else:
-        if station['status'] == 'Testing' and not allow_testing:
-            logger.info("Ground station {} is in testing mode but auto-scheduling is not "
-                        "allowed. Use -T command line argument to enable scheduling.".format(
-                            ground_station_id))
-        else:
-            logger.info("Ground station {} neither in 'online' nor in 'testing' mode, "
-                        "can't schedule!".format(ground_station_id))
-        return {}
+        logger.info("Ground station {} neither in 'online' nor in 'testing' mode, "
+                    "can't schedule!".format(ground_station_id))
+    return {}
 
 
 def schedule_observations_batch(observations):
