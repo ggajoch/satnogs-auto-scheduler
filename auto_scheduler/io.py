@@ -41,7 +41,7 @@ def read_priorities_transmitters(filename):
     #   43017 1. KgazZMKEa74VnquqXLwAvD
     if not filename or not os.path.exists(filename):
         # No priorites file found, return empty objects
-        logger.warning('Could not read priority file {}.'.format(filename))
+        logger.warning('Could not read priority file %s.', filename)
         return ({}, {})
 
     satprio = {}
