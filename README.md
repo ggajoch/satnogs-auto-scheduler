@@ -10,10 +10,19 @@ You will need Python 3 and the Python virtualenv utility. The following example 
 
 ```bash
 sudo apt-get update
-sudo apt-get install virtualenv python3-virtualenv libxml2-dev libxslt1-dev
+sudo apt-get install git virtualenv python3-virtualenv
+
+git clone https://gitlab.com/librespacefoundation/satnogs/satnogs-auto-scheduler.git
+cd satnogs-auto-scheduler
 virtualenv -p python3 env
 source env/bin/activate
 pip install .
+```
+
+You can verify your installed version with the following command:
+```
+$ ./schedule_single_station.py --version
+satnogs-auto-scheduler 0+untagged.160.g3a8e121
 ```
 
 ## Configuration
