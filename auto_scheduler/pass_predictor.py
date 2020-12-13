@@ -103,7 +103,7 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
                     'tt': tt.datetime(),  # Max altitude time
                     'altt': elevation,  # Max altitude
                     'ts': ts.datetime(),  # Set time
-                    'td': pass_duration, # Set duration
+                    'td': pass_duration,  # Set duration
                     'azs': azimuth_s,  # Set azimuth
                     'transmitter': {
                         'uuid': satellite.transmitter,

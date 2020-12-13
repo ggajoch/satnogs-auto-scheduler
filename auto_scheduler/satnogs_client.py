@@ -97,7 +97,7 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
         # r.json() is a list of dicts/observations
         for o in r.json():
             start = datetime.strptime(o['start'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
-            end   = datetime.strptime(o['end'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+            end = datetime.strptime(o['end'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
             satpass = {
                 "tr": start,
                 "ts": end,
