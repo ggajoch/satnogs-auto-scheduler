@@ -103,6 +103,7 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
                     'tt': tt.datetime(),  # Max altitude time
                     'altt': elevation,  # Max altitude
                     'ts': ts.datetime(),  # Set time
+                    'td': pass_duration, # Set duration
                     'azs': azimuth_s,  # Set azimuth
                     'transmitter': {
                         'uuid': satellite.transmitter,
@@ -193,6 +194,8 @@ def constrain_pass_to_az_window(satellite, observer, satpass, start_azimuth, sto
         if pass_duration < timedelta(minutes=min_pass_duration):
             return None
 
+        satpass['td'] = pass_duration
+
     return satpass
 
 
@@ -224,3 +227,36 @@ def check_az_in_window(azimuth, start_azimuth, stop_azimuth):
 
     # Azimuth is outside the window (normal or complementary)
     return complementary_window
+
+
+def constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin, tmax):
+    """
+    Determines wheather a given observation duration time exceeds the time to record an
+    observation. In case the calculated recording time is longer then the max_pass_duration
+    the start and end values are shortened to have the optimal recording time above the horizon
+    for the given satellite.
+    :param satpass: Satpass to be adjusted to fit within the recording duration. Modified
+    in-place.
+    :param max_pass_duration: Maximum pass duration in minutes. Passes longer than this are
+    shortned.
+    :param tmin: Earliest time for a schedule
+    :param tmax: Latest time for a schedule
+    :return: The modified satpass object that satisfies the record duration constraint.
+    """
+
+    max_duration = timedelta(minutes=max_pass_duration)
+
+    if satpass['td'] > max_duration:
+        half = (satpass['td'] - max_duration) / 2
+
+        # Max elevation fits within time frame
+        if satpass['tr'] + half >= tmin and satpass['ts'] - half <= tmax:
+            satpass['tr'] += half
+            satpass['ts'] -= half
+        else:
+            satpass['ts'] = min(satpass['ts'], tmax)
+            satpass['tr'] = satpass['ts'] - max_duration
+
+        satpass['td'] = satpass['ts'] - satpass['tr']
+
+    return satpass

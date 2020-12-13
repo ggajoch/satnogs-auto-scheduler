@@ -11,7 +11,7 @@ from auto_scheduler import __version__ as auto_scheduler_version
 from auto_scheduler.io import read_priorities_transmitters, read_tles, \
     read_transmitters
 from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
-    create_observer, find_passes
+    create_observer, find_passes, constrain_pass_to_max_observation_duration
 from auto_scheduler.satnogs_client import get_groundstation_info, \
     get_scheduled_passes_from_network, schedule_observations_batch
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
@@ -51,6 +51,11 @@ def main():
                         help="Duration to schedule [hours; default: 1.0]",
                         type=float,
                         default=1.0)
+    parser.add_argument("-o",
+                        "--max-observation-duration",
+                        help="Max time for a single observation [minutes; default: 30]",
+                        type=float,
+                        default=30.0)
     parser.add_argument("-m",
                         "--min-culmination",
                         help="Minimum culmination elevation [degrees; " +
@@ -167,6 +172,9 @@ def main():
     tmin = tnow
     tmax = tnow + timedelta(hours=length_hours)
 
+    # Set max record duration
+    max_observation_duration = args.max_observation_duration
+
     # Get ground station information
     ground_station = get_groundstation_info(ground_station_id, args.allow_testing)
     if not ground_station:
@@ -260,6 +268,12 @@ def main():
                 continue
             logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",
                           float(p['azr']), float(p['azs']))
+
+            logging.debug("Original pass for %s is start %s and end %s", str(satellite.name),
+                          p['tr'], p['ts'])
+            p = constrain_pass_to_max_observation_duration(p, max_observation_duration, tmin, tmax)
+            logging.debug("Adjusted max observation duration for %s to start %s and end %s",
+                          str(satellite.name), p['tr'], p['ts'])
 
             p.update({
                 'satellite': {
