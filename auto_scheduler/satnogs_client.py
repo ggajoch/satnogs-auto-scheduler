@@ -50,7 +50,8 @@ def get_active_transmitter_info(fmin, fmax):
     transmitters = []
     for o in r.json():
         if o["downlink_low"]:
-            if o["status"] == "active" and o["downlink_low"] > fmin and o["downlink_low"] <= fmax:
+            if o["status"] == "active" and o["downlink_low"] > fmin and o[
+                    "downlink_low"] <= fmax and o["norad_cat_id"] is not None:
                 transmitter = {
                     "norad_cat_id": o["norad_cat_id"],
                     "uuid": o["uuid"],
