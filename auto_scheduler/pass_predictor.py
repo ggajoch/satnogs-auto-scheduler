@@ -41,6 +41,7 @@ def create_observer(lat, lon, alt, min_riseset=0.0):
     '''
     Create an observer instance.
     '''
+    # pylint: disable=assigning-non-slot
     observer = ephem.Observer()
     observer.lat = str(lat)
     observer.lon = str(lon)
