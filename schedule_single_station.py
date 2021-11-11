@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 import settings
 from auto_scheduler import __version__ as auto_scheduler_version
+from auto_scheduler.cache import CacheManager
 from auto_scheduler.io import read_priorities_transmitters, read_tles, \
     read_transmitters
 from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
@@ -19,7 +20,6 @@ from auto_scheduler.satnogs_client import get_groundstation_info, \
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
 from auto_scheduler.utils import get_priority_passes, \
     print_scheduledpass_summary, satellites_from_transmitters
-from cache import CacheManager
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
