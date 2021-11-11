@@ -35,10 +35,19 @@ def read_tles(tles_file):
             yield {'norad_cat_id': norad_cat_id, 'lines': [tle0, tle1, tle2]}
 
 
+def strip_comments(csv_file):
+    # source: https://stackoverflow.com/a/50592259
+    for row in csv_file:
+        raw = row.split('#')[0].strip()
+        if raw:
+            yield raw
+
+
 def read_priorities_transmitters(filename):
     # Priorities and favorite transmitters
     # read the following format
     #   43017 1. KgazZMKEa74VnquqXLwAvD
+
     if not filename or not os.path.exists(filename):
         # No priorites file found, return empty objects
         logger.warning('Could not read priority file %s.', filename)
@@ -47,11 +56,13 @@ def read_priorities_transmitters(filename):
     satprio = {}
     sattrans = {}
     with open(filename, "r") as fp:
-        reader = csv.reader(filter(lambda row: row[0] != '#', fp), delimiter=' ')
+        reader = csv.reader(strip_comments(fp), delimiter=' ')
         for row in reader:
             if len(row) != 3:
                 # Skip malformed lines
+                logger.warning('Malformed line, expected 3 parameters but found %d' % len(row))
                 continue
+
             sat, prio, transmitter = row
             satprio[sat] = float(prio)
             sattrans[sat] = transmitter

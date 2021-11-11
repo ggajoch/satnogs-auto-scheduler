@@ -1,0 +1,4 @@
+40001 1.0 DeWBnHP8rRczvykrQhwJcA # Satellite 1
+40002 1.0 DeWBnHP8rRczvykrQhwJcB	# You _have_ to see this satellite!
+40003 1.0 DeWBnHP8rRczvykrQhwJcC    # Super secret satellite
+40004 1.0 DeWBnHP8rRczvykrQhwJcD

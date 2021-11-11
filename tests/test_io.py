@@ -60,6 +60,18 @@ a_fixture = ({
     '43017': 'KgazZMKEa74VnquqXLwAvD'
 })
 
+c_fixture = ({
+    '40001': 1.0,
+    '40002': 1.0,
+    '40003': 1.0,
+    '40004': 1.0
+}, {
+    '40001': 'DeWBnHP8rRczvykrQhwJcA',
+    '40002': 'DeWBnHP8rRczvykrQhwJcB',
+    '40003': 'DeWBnHP8rRczvykrQhwJcC',
+    '40004': 'DeWBnHP8rRczvykrQhwJcD'
+})
+
 
 def test_read_priorities_transmitters():
     a = read_priorities_transmitters("tests/prios1.txt")
@@ -69,3 +81,9 @@ def test_read_priorities_transmitters():
 def test_read_priorities_transmitters_trailing_newline():
     b = read_priorities_transmitters("tests/prios1_trailing_newline.txt")
     assert (a_fixture == b)
+
+
+def test_read_priorities_transmitters_trailing_comment():
+    c = read_priorities_transmitters("tests/prios_w_trailing_comment.txt")
+    print(c)
+    assert (c_fixture == c)
