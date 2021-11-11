@@ -6,6 +6,8 @@ import logging
 import sys
 from datetime import datetime, timedelta
 
+from tqdm import tqdm
+
 import settings
 from auto_scheduler import __version__ as auto_scheduler_version
 from auto_scheduler.io import read_priorities_transmitters, read_tles, \
@@ -18,7 +20,6 @@ from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
 from auto_scheduler.utils import get_priority_passes, \
     print_scheduledpass_summary, satellites_from_transmitters
 from cache import CacheManager
-from tqdm import tqdm
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 

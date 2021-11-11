@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 
 import requests
+
 import settings
 
 logger = logging.getLogger(__name__)
