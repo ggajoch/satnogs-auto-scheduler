@@ -103,5 +103,5 @@ class CacheManager:
 
         # Store TLEs
         with open(self.tles_file, "w") as f:
-            for norad_cat_id, (source, tle) in tles.items():
+            for _, (_, tle) in tles.items():
                 f.write("%s\n%s\n%s\n" % (tle[0], tle[1], tle[2]))
