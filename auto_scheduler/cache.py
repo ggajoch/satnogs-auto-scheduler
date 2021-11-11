@@ -73,11 +73,9 @@ class CacheManager:
 
         # Extract NORAD IDs from transmitters
         norad_cat_ids = sorted(
-            set([
-                transmitter["norad_cat_id"] for transmitter in transmitters.values()
+            set(transmitter["norad_cat_id"] for transmitter in transmitters.values()
                 if transmitter["norad_cat_id"] < self.max_norad_cat_id
-                and transmitter["norad_cat_id"] in alive_norad_cat_ids
-            ]))
+                and transmitter["norad_cat_id"] in alive_norad_cat_ids))
 
         # Store transmitters
         fp = open(self.transmitters_file, "w")
