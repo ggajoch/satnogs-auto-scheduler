@@ -1,6 +1,6 @@
 variables:
   GITLAB_CI_IMAGE_PYTHON3: 'python:3.8'
-  GITLAB_CI_PYPI_TOX: 'tox~=3.8.0'
+  GITLAB_CI_PYPI_TOX: 'tox~=3.24.0'
 stages:
   - static
 static:
@@ -10,3 +10,10 @@ static:
     - pip install "$GITLAB_CI_PYPI_TOX"
   script:
     - tox -e "py3-flake8,isort,yapf,pylint"
+test:
+  stage: static
+  image: ${GITLAB_CI_IMAGE_PYTHON3}
+  before_script:
+    - pip install "$GITLAB_CI_PYPI_TOX"
+  script:
+    - tox -e ""
