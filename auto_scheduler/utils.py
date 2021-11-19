@@ -1,4 +1,4 @@
-from auto_scheduler import Satellite, Twolineelement
+from auto_scheduler import Satellite
 
 
 def get_priority_passes(passes, priorities, favorite_transmitters, only_priority, min_priority):
@@ -45,9 +45,9 @@ def satellites_from_transmitters(transmitters, tles):
         for tle in tles:
             if tle['norad_cat_id'] == transmitter['norad_cat_id']:
                 satellites.append(
-                    Satellite(Twolineelement(*tle['lines']), transmitter['uuid'],
-                              transmitter['success_rate'], transmitter['good_count'],
-                              transmitter['data_count'], transmitter['mode']))
+                    Satellite(tle, transmitter['uuid'], transmitter['success_rate'],
+                              transmitter['good_count'], transmitter['data_count'],
+                              transmitter['mode']))
     return satellites
 
 

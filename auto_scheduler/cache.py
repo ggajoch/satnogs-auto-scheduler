@@ -1,11 +1,13 @@
+import json
 import logging
 import os
 from datetime import datetime
 
 from satellite_tle import fetch_tles
 
+from auto_scheduler import settings
 from auto_scheduler.satnogs_client import get_active_transmitter_info, \
-    get_satellite_info, get_transmitter_stats
+    get_satellite_info, get_tles, get_transmitter_stats
 
 
 class CacheManager:
@@ -19,7 +21,7 @@ class CacheManager:
 
         self.transmitters_file = os.path.join(self.cache_dir,
                                               "transmitters_%d.txt" % self.ground_station_id)
-        self.tles_file = os.path.join(self.cache_dir, "tles_%d.txt" % self.ground_station_id)
+        self.tles_file = os.path.join(self.cache_dir, "tles_%d.json" % self.ground_station_id)
         self.last_update_file = os.path.join(self.cache_dir,
                                              "last_update_%d.txt" % ground_station_id)
 
@@ -98,10 +100,33 @@ class CacheManager:
         logging.info("Transmitter success rates received!")
         fp.close()
 
-        # Get TLEs
-        tles = fetch_tles(norad_cat_ids)
+        self.update_tles(norad_cat_ids)
 
-        # Store TLEs
+    def update_tles(self, norad_cat_ids):
+        """
+        Download TLEs using one of the following methods:
+        - Authenticated access to SatNOGS DB  (SatNOGS DB API Token required)
+        - satellite_tle.fetch_tles, which collects data from various sources.
+          This will take quite some time and a lot of seperate requests depending
+          on the type and number of requested objects (slow, DEPRECATED)
+        """
+        if settings.SATNOGS_DB_API_TOKEN:
+            # Method 1: Use authenticated SatNOGS DB access
+            logging.info("Downloading TLEs from satnogs-db.")
+            tle_data = get_tles()
+
+            # Filter objects of interest only
+            tles = list(filter(lambda entry: entry['norad_cat_id'] in norad_cat_ids, tle_data))
+        else:
+            # Method 2: Use satellite_tle.fetch_tles (slow!)
+            tle_data = fetch_tles(norad_cat_ids)
+            tles = [{
+                'norad_cat_id': norad_cat_id,
+                'tle_source': source,
+                'tle0': tle[0],
+                'tle1': tle[1],
+                'tle2': tle[2]
+            } for norad_cat_id, (source, tle) in tle_data.items()]
+
         with open(self.tles_file, "w") as f:
-            for _, (_, tle) in tles.items():
-                f.write("%s\n%s\n%s\n" % (tle[0], tle[1], tle[2]))
+            json.dump(tles, f, indent=2)

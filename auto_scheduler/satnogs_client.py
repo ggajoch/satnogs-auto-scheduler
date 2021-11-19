@@ -9,8 +9,12 @@ import auto_scheduler.settings as settings
 logger = logging.getLogger(__name__)
 
 
-def get_paginated_endpoint(url, max_entries=None):
-    r = requests.get(url=url)
+def get_paginated_endpoint(url, max_entries=None, authenticated=False):
+    if authenticated:
+        r = requests.get(
+            url=url, headers={'Authorization': 'Token {}'.format(settings.SATNOGS_DB_API_TOKEN)})
+    else:
+        r = requests.get(url=url)
     r.raise_for_status()
 
     data = r.json()
@@ -61,6 +65,12 @@ def get_active_transmitter_info(fmin, fmax):
                 transmitters.append(transmitter)
     logger.info("Transmitters filtered based on ground station capability.")
     return transmitters
+
+
+def get_tles():
+    tle_data = get_paginated_endpoint('{}/api/tle/'.format(settings.DB_BASE_URL),
+                                      authenticated=True)
+    return tle_data
 
 
 def get_transmitter_stats():

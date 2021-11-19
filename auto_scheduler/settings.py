@@ -13,3 +13,4 @@ MIN_PASS_DURATION = config('MIN_PASS_DURATION', default=3, cast=float)  # In min
 
 # Credentials
 SATNOGS_API_TOKEN = config('SATNOGS_API_TOKEN', default='')
+SATNOGS_DB_API_TOKEN = config('SATNOGS_DB_API_TOKEN', default='')

@@ -2,6 +2,7 @@
 from __future__ import division
 
 import argparse
+import json
 import logging
 import sys
 from datetime import datetime, timedelta
@@ -11,8 +12,7 @@ from tqdm import tqdm
 import auto_scheduler.settings as settings
 from auto_scheduler import __version__ as auto_scheduler_version
 from auto_scheduler.cache import CacheManager
-from auto_scheduler.io import read_priorities_transmitters, read_tles, \
-    read_transmitters
+from auto_scheduler.io import read_priorities_transmitters, read_transmitters
 from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
     constrain_pass_to_max_observation_duration, create_observer, find_passes
 from auto_scheduler.satnogs_client import get_groundstation_info, \
@@ -243,7 +243,8 @@ def main():
     min_pass_duration = settings.MIN_PASS_DURATION
 
     # Read tles
-    tles = list(read_tles(cache.tles_file))
+    with open(cache.tles_file) as fp:
+        tles = json.load(fp)
 
     # Read transmitters
     transmitters = read_transmitters(cache.transmitters_file)

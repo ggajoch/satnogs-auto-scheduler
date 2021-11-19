@@ -19,22 +19,6 @@ def read_transmitters(transmitters_file):
             }
 
 
-def read_tles(tles_file):
-    with open(tles_file, "r") as f:
-        lines = f.readlines()
-        for i in range(0, len(lines), 3):
-            tle0 = lines[i]
-            tle1 = lines[i + 1]
-            tle2 = lines[i + 2]
-
-            if tle1.split(" ")[1] == "":
-                norad_cat_id = int(tle1.split(" ")[2][:4])
-            else:
-                norad_cat_id = int(tle1.split(" ")[1][:5])
-
-            yield {'norad_cat_id': norad_cat_id, 'lines': [tle0, tle1, tle2]}
-
-
 def strip_comments(csv_file):
     # source: https://stackoverflow.com/a/50592259
     for row in csv_file:

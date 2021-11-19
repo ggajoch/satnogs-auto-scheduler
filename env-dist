@@ -2,3 +2,6 @@
 
 # Your SatNOGS network API token
 SATNOGS_API_TOKEN = ''
+
+# Your SatNOGS DB API token (optional, but recommended)
+SATNOGS_DB_API_TOKEN = ''
