@@ -257,7 +257,7 @@ def main():
     logging.info('Finding all passes for %s satellites:' % len(satellites))
 
     # Loop over satellites
-    for satellite in tqdm(satellites):
+    for satellite in tqdm(satellites, disable=None):
         satellite_passes = find_passes(satellite, observer, tmin, tmax, min_culmination,
                                        min_pass_duration)
         for p in satellite_passes:
