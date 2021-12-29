@@ -108,7 +108,7 @@ def main():
                         help="File with transmitter priorities. Should have " +
                         "columns of the form |NORAD priority UUID| like |43017 0.9" +
                         " KgazZMKEa74VnquqXLwAvD|. Priority is fractional, one transmitter " +
-                        "per line.",
+                        "per line, 1.0 gets maximum priority.",
                         default=None)
     parser.add_argument("-M",
                         "--min-priority",
