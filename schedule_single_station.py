@@ -105,6 +105,7 @@ def main():
                         action="store_true")
     parser.add_argument("-P",
                         "--priorities",
+                        metavar="PRIORITIES_FILE",
                         help="File with transmitter priorities. Should have " +
                         "columns of the form |NORAD priority UUID| like |43017 0.9" +
                         " KgazZMKEa74VnquqXLwAvD|. Priority is fractional, one transmitter " +
