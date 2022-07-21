@@ -44,7 +44,9 @@ def read_priorities_transmitters(filename):
         for row in reader:
             if len(row) != 3:
                 # Skip malformed lines
-                logger.warning('Malformed line, expected 3 parameters but found %d' % len(row))
+                logger.warning(
+                    'Malformed line in priority file %s,\n expected 3 parameters but found %d',
+                    filename, len(row))
                 continue
 
             sat, prio, transmitter = row
