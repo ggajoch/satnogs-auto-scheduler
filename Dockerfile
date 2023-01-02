@@ -45,4 +45,5 @@ RUN echo "[global]" > /etc/pip.conf \
 
 USER ${SATNOGS_CLIENT_NAME}
 WORKDIR ${SATNOGS_CLIENT_VARSTATEDIR}
+CMD ["bash"]
 
