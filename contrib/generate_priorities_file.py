@@ -68,7 +68,7 @@ def main(station_id, constrains_file, priorities_file):
     for sat in satellites:
         for prio in prefered_priorities:
             # if the sat is in the list and prio smaller that the new one
-            if (sat_list.get(sat.id) is not None):
+            if sat_list.get(sat.id) is not None:
                 if sat_list[sat.id][1] < prio.priority:
                     if prio.is_candidate(sat):
                         sat_list[sat.id] = (sat.id, prio.priority, sat.transmitter)

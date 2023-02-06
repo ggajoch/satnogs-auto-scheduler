@@ -75,15 +75,15 @@ c_fixture = ({
 
 def test_read_priorities_transmitters():
     a = read_priorities_transmitters("tests/prios1.txt")
-    assert (a_fixture == a)
+    assert a_fixture == a
 
 
 def test_read_priorities_transmitters_trailing_newline():
     b = read_priorities_transmitters("tests/prios1_trailing_newline.txt")
-    assert (a_fixture == b)
+    assert a_fixture == b
 
 
 def test_read_priorities_transmitters_trailing_comment():
     c = read_priorities_transmitters("tests/prios_w_trailing_comment.txt")
     print(c)
-    assert (c_fixture == c)
+    assert c_fixture == c
