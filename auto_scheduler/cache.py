@@ -11,6 +11,7 @@ from auto_scheduler.satnogs_client import get_active_transmitter_info, get_satel
 
 
 class CacheManager:
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, ground_station_id, ground_station_antennas, cache_dir, cache_age,
                  max_norad_cat_id):
