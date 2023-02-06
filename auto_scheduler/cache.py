@@ -83,25 +83,24 @@ class CacheManager:
                 and transmitter["norad_cat_id"] in alive_norad_cat_ids))
 
         # Store transmitters
-        fp = open(self.transmitters_file, "w")
-        logging.info("Requesting transmitter success rates.")
-        transmitters_stats = get_transmitter_stats()
-        for transmitter in transmitters_stats:
-            uuid = transmitter["uuid"]
-            # Skip absent transmitters
-            if uuid not in transmitters.keys():
-                continue
-            # Skip dead satellites
-            if transmitters[uuid]["norad_cat_id"] not in alive_norad_cat_ids:
-                continue
+        with open(self.transmitters_file, "w") as fp:
+            logging.info("Requesting transmitter success rates.")
+            transmitters_stats = get_transmitter_stats()
+            for transmitter in transmitters_stats:
+                uuid = transmitter["uuid"]
+                # Skip absent transmitters
+                if uuid not in transmitters.keys():
+                    continue
+                # Skip dead satellites
+                if transmitters[uuid]["norad_cat_id"] not in alive_norad_cat_ids:
+                    continue
 
-            fp.write("%05d %s %d %d %d %s\n" %
-                     (transmitters[uuid]["norad_cat_id"], uuid,
-                      transmitter["stats"]["success_rate"], transmitter["stats"]["good_count"],
-                      transmitter["stats"]["total_count"], transmitters[uuid]["mode"]))
+                fp.write("%05d %s %d %d %d %s\n" %
+                         (transmitters[uuid]["norad_cat_id"], uuid,
+                          transmitter["stats"]["success_rate"], transmitter["stats"]["good_count"],
+                          transmitter["stats"]["total_count"], transmitters[uuid]["mode"]))
 
-        logging.info("Transmitter success rates received!")
-        fp.close()
+            logging.info("Transmitter success rates received!")
 
         self.update_tles(norad_cat_ids)
 
