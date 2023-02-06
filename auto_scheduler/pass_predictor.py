@@ -26,12 +26,10 @@ def overlap(satpass, scheduledpasses, wait_time_seconds):
                 seconds=wait_time_seconds) < ts:
             overlap = True
         # Pass start falls within pass
-        elif tr >= scheduledpass['tr'] and tr < scheduledpass['ts'] + timedelta(
-                seconds=wait_time_seconds):
+        elif scheduledpass['tr'] <= tr < scheduledpass['ts'] + timedelta(seconds=wait_time_seconds):
             overlap = True
         # Pass end falls within end
-        elif ts >= scheduledpass['tr'] and ts < scheduledpass['ts'] + timedelta(
-                seconds=wait_time_seconds):
+        elif scheduledpass['tr'] <= ts < scheduledpass['ts'] + timedelta(seconds=wait_time_seconds):
             overlap = True
         if overlap:
             break
