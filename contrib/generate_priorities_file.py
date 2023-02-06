@@ -45,7 +45,6 @@ def main(station_id, constrains_file, priorities_file):
                 prefered_priorities.append(prf)
             except Exception as err:
                 logging.error(err)
-                pass
 
     ground_station = get_groundstation_info(station_id, allow_testing=True)
     cache = CacheManager(station_id, ground_station['antenna'], settings.CACHE_DIR,
