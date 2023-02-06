@@ -14,7 +14,7 @@ static:
     - pip install virtualenv
     - virtualenv venv
     - source venv/bin/activate
-    - pip install pre-commit
+    - pip install pre-commit -e '.[dev]'
     - pre-commit install
   script:
     - pre-commit run --all-files

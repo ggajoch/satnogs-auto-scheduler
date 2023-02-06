@@ -1,4 +1,4 @@
-# pylint: disable=consider-using-f-string
+# pylint: disable=consider-using-f-string,missing-timeout
 
 import logging
 import sys
