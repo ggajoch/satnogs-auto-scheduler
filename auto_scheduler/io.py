@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 
 
 def read_transmitters(transmitters_file):
-    with open(transmitters_file, "r") as f:
-        for line in f.readlines():
+    with open(transmitters_file, "r") as fp_transmitters:
+        for line in fp_transmitters.readlines():
             item = line.split()
             yield {
                 "norad_cat_id": int(item[0]),
@@ -37,10 +37,10 @@ def read_priorities_transmitters(filename):
         logger.warning('Could not read priority file %s.', filename)
         return ({}, {})
 
-    satprio = {}
-    sattrans = {}
-    with open(filename, "r") as fp:
-        reader = csv.reader(strip_comments(fp), delimiter=' ')
+    priorities = {}
+    transmitters = {}
+    with open(filename, "r") as fp_priorities:
+        reader = csv.reader(strip_comments(fp_priorities), delimiter=' ')
         for row in reader:
             if len(row) != 3:
                 # Skip malformed lines
@@ -49,10 +49,10 @@ def read_priorities_transmitters(filename):
                     filename, len(row))
                 continue
 
-            sat, prio, transmitter = row
-            satprio[sat] = float(prio)
-            sattrans[sat] = transmitter
-    return (satprio, sattrans)
+            norad_id, prio, transmitter = row
+            priorities[norad_id] = float(prio)
+            transmitters[norad_id] = transmitter
+    return (priorities, transmitters)
 
 
 def read_tles(tles_file):
@@ -61,8 +61,8 @@ def read_tles(tles_file):
 
     Deprecated. Serialization using JSON is preferred.
     """
-    with open(tles_file, "r") as f:
-        lines = f.readlines()
+    with open(tles_file, "r") as fp_tles:
+        lines = fp_tles.readlines()
         for i in range(0, len(lines), 3):
             tle0 = lines[i]
             tle1 = lines[i + 1]

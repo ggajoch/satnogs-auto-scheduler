@@ -32,8 +32,8 @@ class CacheManager:
 
     def last_update(self):
         try:
-            with open(self.last_update_file, "r") as f:
-                line = f.readline()
+            with open(self.last_update_file, "r") as fp_last_update:
+                line = fp_last_update.readline()
             return datetime.strptime(line.strip(), "%Y-%m-%dT%H:%M:%S")
         except IOError:
             return None
@@ -63,8 +63,8 @@ class CacheManager:
         tnow = datetime.now()
 
         # Store current time
-        with open(self.last_update_file, "w") as fp:
-            fp.write(tnow.strftime("%Y-%m-%dT%H:%M:%S") + "\n")
+        with open(self.last_update_file, "w") as fp_last_update:
+            fp_last_update.write(f'{tnow:%Y-%m-%dT%H:%M:%S}\n')
 
         # Get active transmitters in frequency range of each antenna
         transmitters = {}
@@ -83,7 +83,7 @@ class CacheManager:
                 and transmitter["norad_cat_id"] in alive_norad_cat_ids))
 
         # Store transmitters
-        with open(self.transmitters_file, "w") as fp:
+        with open(self.transmitters_file, "w") as fp_transmitters:
             logging.info("Requesting transmitter success rates.")
             transmitters_stats = get_transmitter_stats()
             for transmitter in transmitters_stats:
@@ -95,10 +95,11 @@ class CacheManager:
                 if transmitters[uuid]["norad_cat_id"] not in alive_norad_cat_ids:
                     continue
 
-                fp.write("%05d %s %d %d %d %s\n" %
-                         (transmitters[uuid]["norad_cat_id"], uuid,
-                          transmitter["stats"]["success_rate"], transmitter["stats"]["good_count"],
-                          transmitter["stats"]["total_count"], transmitters[uuid]["mode"]))
+                fp_transmitters.write(
+                    "%05d %s %d %d %d %s\n" %
+                    (transmitters[uuid]["norad_cat_id"], uuid, transmitter["stats"]["success_rate"],
+                     transmitter["stats"]["good_count"], transmitter["stats"]["total_count"],
+                     transmitters[uuid]["mode"]))
 
             logging.info("Transmitter success rates received!")
 
@@ -130,5 +131,5 @@ class CacheManager:
                 'tle2': tle[2]
             } for norad_cat_id, (source, tle) in tle_data.items()]
 
-        with open(self.tles_file, "w") as f:
-            json.dump(tles, f, indent=2)
+        with open(self.tles_file, "w") as fp_tles:
+            json.dump(tles, fp_tles, indent=2)

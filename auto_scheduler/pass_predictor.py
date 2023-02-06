@@ -6,6 +6,8 @@ import ephem
 
 def overlap(satpass, scheduledpasses, wait_time_seconds):
     """Check if this pass overlaps with already scheduled passes"""
+    # pylint: disable=invalid-name
+
     # No overlap
     overlap = False
 
@@ -68,8 +70,8 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
     while keep_digging:
         try:
             sat_ephem.compute(observer)
-        except ValueError as e:
-            if str(e).startswith("TLE elements are valid for a few weeks around their epoch"):
+        except ValueError as error:
+            if str(error).startswith("TLE elements are valid for a few weeks around their epoch"):
                 # pylint: disable=protected-access
                 age = observer.date.datetime() - sat_ephem._epoch.datetime()
                 print(f"ERROR: TLE too old: {age}")
@@ -78,6 +80,7 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
                 print(satellite.tle2.strip())
             break
         try:
+            # pylint: disable=invalid-name
             tr, azr, tt, altt, ts, azs = observer.next_pass(sat_ephem)
         except ValueError:
             break  # there will be sats in our list that fall below horizon, skip

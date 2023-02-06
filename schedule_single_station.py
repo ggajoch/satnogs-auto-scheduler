@@ -248,8 +248,8 @@ def main():
     min_pass_duration = settings.MIN_PASS_DURATION
 
     # Read tles
-    with open(cache.tles_file) as fp:
-        tles = json.load(fp)
+    with open(cache.tles_file) as fp_tles:
+        tles = json.load(fp_tles)
 
     # Read transmitters
     transmitters = read_transmitters(cache.transmitters_file)
@@ -265,29 +265,31 @@ def main():
     for satellite in tqdm(satellites, disable=None):
         satellite_passes = find_passes(satellite, observer, tmin, tmax, min_culmination,
                                        min_pass_duration)
-        for p in satellite_passes:
+        for satpass in satellite_passes:
             # Constrain the passes to be within the allowable viewing window
-            logging.debug("Original pass is azr %f and azs %f", float(p['azr']), float(p['azs']))
-            p = constrain_pass_to_az_window(satellite, observer, p, start_azimuth, stop_azimuth,
-                                            min_pass_duration)
+            logging.debug("Original pass is azr %f and azs %f", float(satpass['azr']),
+                          float(satpass['azs']))
+            satpass = constrain_pass_to_az_window(satellite, observer, satpass, start_azimuth,
+                                                  stop_azimuth, min_pass_duration)
 
-            if not p:
+            if not satpass:
                 logging.debug("Pass did not meet azimuth window requirements. Removed.")
                 continue
             logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",
-                          float(p['azr']), float(p['azs']))
+                          float(satpass['azr']), float(satpass['azs']))
 
-            logging.debug("Original pass for %s is start %s and end %s", str(satellite.name),
-                          p['tr'], p['ts'])
-            p = constrain_pass_to_max_observation_duration(p, max_observation_duration, tmin, tmax)
-            logging.debug("Adjusted max observation duration for %s to start %s and end %s",
-                          str(satellite.name), p['tr'], p['ts'])
+            logging.debug(f"Original pass for {satellite.name:s}"
+                          f"is start {satpass['tr']:s} and end {satpass['ts']:s}")
+            satpass = constrain_pass_to_max_observation_duration(satpass, max_observation_duration,
+                                                                 tmin, tmax)
+            logging.debug(f"Adjusted max observation duration for {satellite.name:s} "
+                          f"to start {satpass['tr']:s} and end {satpass['ts']:s}")
 
             # pylint: disable=duplicate-code
             # NOTE: The transmitter was already added by find_passes initially.
             #       Why do we set it here again?
             # Additionally, setting the satellite in find_passes directly would be cleaner.
-            p.update({
+            satpass.update({
                 'satellite': {
                     'name': str(satellite.name),
                     'id': str(satellite.id),
@@ -303,7 +305,7 @@ def main():
                 },
                 'scheduled': False
             })
-            passes.append(p)
+            passes.append(satpass)
 
     priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
 

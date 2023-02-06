@@ -74,16 +74,37 @@ c_fixture = ({
 
 
 def test_read_priorities_transmitters():
-    a = read_priorities_transmitters("tests/prios1.txt")
-    assert a_fixture == a
+    """
+    Unit test for read_priorities_transmitters,
+    using a typical user-provided priorities file.
+    """
+    priorities0, transmitters0 = read_priorities_transmitters("tests/prios1.txt")
+    priorities1, transmitters1 = a_fixture
+
+    assert priorities0 == priorities1
+    assert transmitters0 == transmitters1
 
 
 def test_read_priorities_transmitters_trailing_newline():
-    b = read_priorities_transmitters("tests/prios1_trailing_newline.txt")
-    assert a_fixture == b
+    """
+    Unit test for read_priorities_transmitters,
+    check for the special case of a trailing newline.
+    """
+    # Note: Re-use of a_fixture is intentional.
+    priorities0, transmitters0 = read_priorities_transmitters("tests/prios1_trailing_newline.txt")
+    priorities1, transmitters1 = a_fixture
+
+    assert priorities0 == priorities1
+    assert transmitters0 == transmitters1
 
 
 def test_read_priorities_transmitters_trailing_comment():
-    c = read_priorities_transmitters("tests/prios_w_trailing_comment.txt")
-    print(c)
-    assert c_fixture == c
+    """
+    Unit test for read_priorities_transmitters,
+    check for the special case of comments, in multiple lines.
+    """
+    priorities0, transmitters0 = read_priorities_transmitters("tests/prios_w_trailing_comment.txt")
+    priorities1, transmitters1 = c_fixture
+
+    assert priorities0 == priorities1
+    assert transmitters0 == transmitters1

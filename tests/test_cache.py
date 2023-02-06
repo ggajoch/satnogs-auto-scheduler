@@ -12,8 +12,8 @@ CACHE_DIR = str(Path(gettempdir()))
 CACHE_AGE = 24
 MAX_NORAD_CAT_ID = 90000
 
-ground_station_id = 2
-ground_station_antenna = [{
+GROUND_STATION_ID = 2
+GROUND_STATION_ANTENNA = [{
     'frequency': 430000000,
     'frequency_max': 470000000,
     'band': 'UHF',
@@ -23,10 +23,13 @@ ground_station_antenna = [{
 
 
 @pytest.mark.skip(reason="this test takes approx. 2 minutes")
-def testCacheManager_force_update():
+def test_cachemanager_force_update():
+    """
+    Unit test for the CacheManager
+    """
     logging.basicConfig(level=logging.DEBUG,
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    cache = CacheManager(ground_station_id, ground_station_antenna, CACHE_DIR, CACHE_AGE,
+    cache = CacheManager(GROUND_STATION_ID, GROUND_STATION_ANTENNA, CACHE_DIR, CACHE_AGE,
                          MAX_NORAD_CAT_ID)
     print(cache.last_update())
     print(cache.update_needed())

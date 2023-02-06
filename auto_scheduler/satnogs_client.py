@@ -13,21 +13,21 @@ logger = logging.getLogger(__name__)
 
 def get_paginated_endpoint(url, max_entries=None, authenticated=False):
     if authenticated:
-        r = requests.get(
+        response = requests.get(
             url=url, headers={'Authorization': 'Token {}'.format(settings.SATNOGS_DB_API_TOKEN)})
     else:
-        r = requests.get(url=url)
-    r.raise_for_status()
+        response = requests.get(url=url)
+    response.raise_for_status()
 
-    data = r.json()
+    data = response.json()
 
-    while 'next' in r.links and (not max_entries or len(data) < max_entries):
-        next_page_url = r.links['next']['url']
+    while 'next' in response.links and (not max_entries or len(data) < max_entries):
+        next_page_url = response.links['next']['url']
 
-        r = requests.get(url=next_page_url)
-        r.raise_for_status()
+        response = requests.get(url=next_page_url)
+        response.raise_for_status()
 
-        data.extend(r.json())
+        data.extend(response.json())
 
     return data
 
@@ -35,14 +35,14 @@ def get_paginated_endpoint(url, max_entries=None, authenticated=False):
 def get_satellite_info():
     # Open session
     logger.info("Fetching satellite information from DB.")
-    r = requests.get('{}/api/satellites'.format(settings.DB_BASE_URL))
+    response = requests.get(f'{settings.DB_BASE_URL}/api/satellites')
     logger.info("Satellites received!")
 
     # Select alive satellites
     norad_cat_ids = []
-    for o in r.json():
-        if o["status"] == "alive":
-            norad_cat_ids.append(o["norad_cat_id"])
+    for obs in response.json():
+        if obs["status"] == "alive":
+            norad_cat_ids.append(obs["norad_cat_id"])
 
     return norad_cat_ids
 
@@ -50,19 +50,19 @@ def get_satellite_info():
 def get_active_transmitter_info(fmin, fmax):
     # Open session
     logger.info("Fetching transmitter information from DB.")
-    r = requests.get('{}/api/transmitters'.format(settings.DB_BASE_URL))
+    response = requests.get(f'{settings.DB_BASE_URL}/api/transmitters')
     logger.info("Transmitters received!")
 
     # Loop
     transmitters = []
-    for o in r.json():
-        if o["downlink_low"]:
-            if o["status"] == "active" and o["downlink_low"] > fmin and o[
-                    "downlink_low"] <= fmax and o["norad_cat_id"] is not None:
+    for obs in response.json():
+        if obs["downlink_low"]:
+            if obs["status"] == "active" and obs["downlink_low"] > fmin and obs[
+                    "downlink_low"] <= fmax and obs["norad_cat_id"] is not None:
                 transmitter = {
-                    "norad_cat_id": o["norad_cat_id"],
-                    "uuid": o["uuid"],
-                    "mode": o["mode"]
+                    "norad_cat_id": obs["norad_cat_id"],
+                    "uuid": obs["uuid"],
+                    "mode": obs["mode"]
                 }
                 transmitters.append(transmitter)
     logger.info("Transmitters filtered based on ground station capability.")
@@ -86,46 +86,45 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     client = requests.session()
 
     # Loop
-    next_url = '{}/api/observations/?ground_station={:d}'.format(settings.NETWORK_BASE_URL,
-                                                                 ground_station)
+    next_url = f'{settings.NETWORK_BASE_URL}/api/observations/?ground_station={ground_station:d}'
     scheduledpasses = []
 
-    logger.info("Requesting scheduled passes for ground station %d" % ground_station)
+    logger.info(f"Requesting scheduled passes for ground station {ground_station:d}")
     # Fetch observations until the time of the end of the last fetched observation happends to be
     # before the start time of the selected timerange for scheduling
     # NOTE: This algorithm is based on the order in which the API returns the observations, i.e.
     # most recent observations are returned at first!
     while next_url:
-        r = client.get(next_url)
+        response = client.get(next_url)
 
-        if 'next' in r.links:
-            next_url = r.links['next']['url']
+        if 'next' in response.links:
+            next_url = response.links['next']['url']
         else:
             logger.debug("No further pages with observations")
             next_url = None
 
-        if not r.json():
+        if not response.json():
             logger.info("Ground station has no observations yet")
             break
 
-        # r.json() is a list of dicts/observations
-        for o in r.json():
-            start = datetime.strptime(o['start'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
-            end = datetime.strptime(o['end'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+        # response.json() is a list of dicts/observations
+        for obs in response.json():
+            start = datetime.strptime(obs['start'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+            end = datetime.strptime(obs['end'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
             satpass = {
                 "tr": start,
                 "ts": end,
                 "td": end - start,
                 "scheduled": True,
-                "altt": o['max_altitude'],
+                "altt": obs['max_altitude'],
                 "priority": 1,
                 "transmitter": {
-                    "uuid": o['transmitter'],
+                    "uuid": obs['transmitter'],
                     "mode": ''
                 },
                 "satellite": {
                     "name": '',
-                    "id": o['norad_cat_id']
+                    "id": obs['norad_cat_id']
                 }
             }
 
@@ -137,19 +136,18 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
             # Last fetched observation is older than the ROI for scheduling, end loop.
             break
 
-    logger.info("Scheduled passes for ground station %d retrieved!", ground_station)
+    logger.info(f"Scheduled passes for ground station {ground_station:d} retrieved!")
     return scheduledpasses
 
 
 def get_groundstation_info(ground_station_id, allow_testing):
 
-    logger.info("Requesting information for ground station %d" % ground_station_id)
+    logger.info(f"Requesting information for ground station {ground_station_id:d}")
 
     # Loop
-    r = requests.get("{}/api/stations/?id={:d}".format(settings.NETWORK_BASE_URL,
-                                                       ground_station_id))
+    response = requests.get(f"{settings.NETWORK_BASE_URL}/api/stations/?id={ground_station_id:d}")
 
-    selected_stations = list(filter(lambda s: s['id'] == ground_station_id, r.json()))
+    selected_stations = list(filter(lambda s: s['id'] == ground_station_id, response.json()))
 
     if not selected_stations:
         logger.info('No ground station information found!')
@@ -165,12 +163,12 @@ def get_groundstation_info(ground_station_id, allow_testing):
 
     if station['status'] == 'Testing' and not allow_testing:
         logger.info(
-            "Ground station %d is in testing mode but auto-scheduling is not "
-            "allowed. Use -T command line argument to enable scheduling.", ground_station_id)
+            f"Ground station {ground_station_id:d} is in testing mode but auto-scheduling is not "
+            "allowed. Use -T command line argument to enable scheduling.")
     else:
         logger.info(
-            "Ground station %d neither in 'online' nor in 'testing' mode, "
-            "can't schedule!", ground_station_id)
+            f"Ground station {ground_station_id:d} neither in 'online' nor in 'testing' mode, "
+            "can't schedule!")
     return {}
 
 
@@ -192,13 +190,14 @@ def schedule_observations_batch(observations):
     } for satpass in observations)
 
     try:
-        r = requests.post('{}/api/observations/'.format(settings.NETWORK_BASE_URL),
-                          json=observations_serialized,
-                          headers={'Authorization': 'Token {}'.format(settings.SATNOGS_API_TOKEN)})
-        r.raise_for_status()
+        response = requests.post(
+            '{}/api/observations/'.format(settings.NETWORK_BASE_URL),
+            json=observations_serialized,
+            headers={'Authorization': 'Token {}'.format(settings.SATNOGS_API_TOKEN)})
+        response.raise_for_status()
         logger.debug("Scheduled %d passes!", len(observations_serialized))
     except requests.HTTPError:
-        err = r.json()
+        err = response.json()
         logger.error("Failed to batch-schedule the passes. Reason: %s", err)
         logger.error("Fall-back to single-pass scheduling.")
         schedule_observations(observations_serialized)
@@ -216,12 +215,12 @@ def schedule_observations(observations_serialized):
     """
     for observation in observations_serialized:
         try:
-            r = requests.post(
-                '{}/api/observations/'.format(settings.NETWORK_BASE_URL),
+            response = requests.post(
+                f'{settings.NETWORK_BASE_URL}/api/observations/',
                 json=[observation],
-                headers={'Authorization': 'Token {}'.format(settings.SATNOGS_API_TOKEN)})
-            r.raise_for_status()
+                headers={'Authorization': f'Token {settings.SATNOGS_API_TOKEN}'})
+            response.raise_for_status()
             logger.debug("Scheduled pass!")
         except requests.HTTPError:
-            err = r.json()
-            logger.error("Failed to schedule the pass at %s. Reason: %s", observation['end'], err)
+            err = response.json()
+            logger.error(f"Failed to schedule the pass at {observation['end']:s}. Reason: {err:s}")

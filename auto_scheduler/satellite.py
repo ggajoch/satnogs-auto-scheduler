@@ -6,6 +6,7 @@ class Satellite:
 
     def __init__(self, tle, transmitter, success_rate, good_count, data_count, mode):
         """Define a satellite"""
+        # pylint: disable=invalid-name
 
         self.tle0 = tle['tle0']
         self.tle1 = tle['tle1']
