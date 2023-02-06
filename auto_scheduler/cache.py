@@ -89,7 +89,7 @@ class CacheManager:
             for transmitter in transmitters_stats:
                 uuid = transmitter["uuid"]
                 # Skip absent transmitters
-                if uuid not in transmitters.keys():
+                if uuid not in transmitters:
                     continue
                 # Skip dead satellites
                 if transmitters[uuid]["norad_cat_id"] not in alive_norad_cat_ids:
