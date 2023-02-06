@@ -4,7 +4,7 @@ from auto_scheduler.tle import parse_tle0
 class Satellite:
     """Satellite class"""
 
-    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes,too-few-public-methods
 
     def __init__(self, tle, transmitter, success_rate, good_count, data_count, mode):
         """Define a satellite"""
