@@ -50,8 +50,8 @@ def main(station_id, constrains_file, priorities_file):
     ground_station = get_groundstation_info(station_id, allow_testing=True)
     cache = CacheManager(station_id, ground_station['antenna'], settings.CACHE_DIR,
                          settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
-    logging.info("Last cache update: {}".format(cache.last_update()))
-    logging.info("Cache update needed: {}".format(cache.update_needed()))
+    logging.info(f'Last cache update: {cache.last_update()}')
+    logging.info(f'Cache update needed: {cache.update_needed()}')
     cache.update()
 
     # Read tles
@@ -81,7 +81,7 @@ def main(station_id, constrains_file, priorities_file):
         for elem in sat_list.values():
             out_file.writelines("{} {} {}\n".format(elem[0], elem[1], elem[2]))
 
-    logging.info("Done, output file written: {}".format(priorities_file))
+    logging.info(f'Done, output file written: {priorities_file}')
 
 
 if __name__ == '__main__':
