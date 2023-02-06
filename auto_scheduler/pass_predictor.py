@@ -9,7 +9,7 @@ def overlap(satpass, scheduledpasses, wait_time_seconds):
     # pylint: disable=invalid-name
 
     # No overlap
-    overlap = False
+    overlap_found = False
 
     # Add wait time
     tr = satpass['tr']
@@ -20,21 +20,21 @@ def overlap(satpass, scheduledpasses, wait_time_seconds):
         # Test pass falls within scheduled pass
         if tr >= scheduledpass['tr'] and ts < scheduledpass['ts'] + timedelta(
                 seconds=wait_time_seconds):
-            overlap = True
+            overlap_found = True
         # Scheduled pass falls within test pass
         elif scheduledpass['tr'] >= tr and scheduledpass['ts'] + timedelta(
                 seconds=wait_time_seconds) < ts:
-            overlap = True
+            overlap_found = True
         # Pass start falls within pass
         elif scheduledpass['tr'] <= tr < scheduledpass['ts'] + timedelta(seconds=wait_time_seconds):
-            overlap = True
+            overlap_found = True
         # Pass end falls within end
         elif scheduledpass['tr'] <= ts < scheduledpass['ts'] + timedelta(seconds=wait_time_seconds):
-            overlap = True
-        if overlap:
+            overlap_found = True
+        if overlap_found:
             break
 
-    return overlap
+    return overlap_found
 
 
 def create_observer(lat, lon, alt, min_riseset=0.0):
