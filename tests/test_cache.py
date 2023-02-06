@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import gettempdir
 
 import pytest
+
 from auto_scheduler.cache import CacheManager
 
 CACHE_DIR = str(Path(gettempdir()))
