@@ -14,6 +14,7 @@ class CacheManager:
 
     def __init__(self, ground_station_id, ground_station_antennas, cache_dir, cache_age,
                  max_norad_cat_id):
+        # pylint: disable=too-many-arguments
         self.ground_station_id = ground_station_id
         self.ground_station_antennas = ground_station_antennas
         self.cache_dir = cache_dir

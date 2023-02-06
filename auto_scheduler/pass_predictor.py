@@ -52,6 +52,7 @@ def create_observer(lat, lon, alt, min_riseset=0.0):
 
 
 def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_duration):
+    # pylint: disable=too-many-arguments
     passes = []
 
     # Set start time
@@ -152,6 +153,7 @@ def constrain_pass_to_az_window(satellite, observer, satpass, start_azimuth, sto
     :return: The modified satpass object that satisfies the viewing window constraint, or None if
     it is impossible to satisfy the viewing window and minimum pass duration constraints
     """
+    # pylint: disable=too-many-arguments
 
     # How much the start/stop time should be incremented by each step while finding the
     # parameters for the constrained pass. Larger values will solve quicker but will result in a
