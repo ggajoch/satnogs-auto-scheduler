@@ -52,7 +52,7 @@ def create_observer(lat, lon, alt, min_riseset=0.0):
 
 
 def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_duration):
-    # pylint: disable=too-many-arguments,disable=broad-exception-caught
+    # pylint: disable=too-many-arguments,broad-exception-caught,too-many-locals
     passes = []
 
     # Set start time

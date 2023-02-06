@@ -41,7 +41,7 @@ def _log_level_string_to_int(log_level_string):
 
 
 def main():
-    # pylint: disable=too-many-branches,too-many-statements
+    # pylint: disable=too-many-branches,too-many-statements,too-many-locals
 
     # Parse arguments
     parser = argparse.ArgumentParser(

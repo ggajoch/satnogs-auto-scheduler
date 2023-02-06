@@ -29,6 +29,7 @@ class Preference:
 
 
 def main(station_id, constrains_file, priorities_file):
+    # pylint: disable=too-many-locals
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
