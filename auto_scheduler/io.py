@@ -53,3 +53,24 @@ def read_priorities_transmitters(filename):
             satprio[sat] = float(prio)
             sattrans[sat] = transmitter
     return (satprio, sattrans)
+
+
+def read_tles(tles_file):
+    """
+    Read TLEs from file using 3LE format.
+
+    Deprecated. Serialization using JSON is preferred.
+    """
+    with open(tles_file, "r") as f:
+        lines = f.readlines()
+        for i in range(0, len(lines), 3):
+            tle0 = lines[i]
+            tle1 = lines[i + 1]
+            tle2 = lines[i + 2]
+
+            if tle1.split(" ")[1] == "":
+                norad_cat_id = int(tle1.split(" ")[2][:4])
+            else:
+                norad_cat_id = int(tle1.split(" ")[1][:5])
+
+            yield {'norad_cat_id': norad_cat_id, 'tle0': tle0, 'tle1': tle1, 'tle2': tle2}
