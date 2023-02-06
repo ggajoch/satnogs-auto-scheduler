@@ -259,7 +259,7 @@ def main():
 
     # Find passes
     passes = []
-    logging.info('Finding all passes for %s satellites:' % len(satellites))
+    logging.info(f'Finding all passes for {len(satellites):d} satellites:')
 
     # Loop over satellites
     for satellite in tqdm(satellites, disable=None):
@@ -311,8 +311,8 @@ def main():
 
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
-    logging.info("Found %d scheduled passes between %s and %s on ground station %d" %
-                 (len(scheduledpasses), tmin, tmax, ground_station_id))
+    logging.info(f"Found {len(scheduledpasses):d} scheduled passes "
+                 f"between {tmin:s} and {tmax:s} on ground station {ground_station_id:d}")
 
     # Get passes of priority objects
     prioritypasses, normalpasses = get_priority_passes(passes, priorities, favorite_transmitters,
