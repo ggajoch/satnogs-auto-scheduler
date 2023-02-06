@@ -41,6 +41,8 @@ def _log_level_string_to_int(log_level_string):
 
 
 def main():
+    # pylint: disable=too-many-branches,too-many-statements
+
     # Parse arguments
     parser = argparse.ArgumentParser(
         description="Automatically schedule observations on a SatNOGS station.")
