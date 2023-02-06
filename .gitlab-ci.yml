@@ -16,4 +16,4 @@ test:
   before_script:
     - pip install "$GITLAB_CI_PYPI_TOX"
   script:
-    - tox -e ""
+    - tox -e "pytest"
