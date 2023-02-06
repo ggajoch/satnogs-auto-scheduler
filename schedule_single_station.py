@@ -281,6 +281,10 @@ def main():
             logging.debug("Adjusted max observation duration for %s to start %s and end %s",
                           str(satellite.name), p['tr'], p['ts'])
 
+            # pylint: disable=duplicate-code
+            # NOTE: The transmitter was already added by find_passes initially.
+            #       Why do we set it here again?
+            # Additionally, setting the satellite in find_passes directly would be cleaner.
             p.update({
                 'satellite': {
                     'name': str(satellite.name),
