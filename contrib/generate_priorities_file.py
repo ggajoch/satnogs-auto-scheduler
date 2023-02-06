@@ -3,7 +3,7 @@ import argparse
 import logging
 import sys
 
-import auto_scheduler.settings as settings
+from auto_scheduler import settings
 from auto_scheduler.cache import CacheManager
 from auto_scheduler.io import read_tles, read_transmitters
 from auto_scheduler.satnogs_client import get_groundstation_info

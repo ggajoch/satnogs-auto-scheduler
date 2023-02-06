@@ -12,8 +12,8 @@ from datetime import datetime, timedelta
 
 from tqdm import tqdm
 
-import auto_scheduler.settings as settings
 from auto_scheduler import __version__ as auto_scheduler_version
+from auto_scheduler import settings
 from auto_scheduler.cache import CacheManager
 from auto_scheduler.io import read_priorities_transmitters, read_transmitters
 from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \

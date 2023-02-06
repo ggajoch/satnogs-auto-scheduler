@@ -6,7 +6,7 @@ from datetime import datetime
 
 import requests
 
-import auto_scheduler.settings as settings
+from auto_scheduler import settings
 
 logger = logging.getLogger(__name__)
 
