@@ -1,3 +1,5 @@
+# pylint: disable=consider-using-f-string
+
 import logging
 import sys
 from datetime import datetime

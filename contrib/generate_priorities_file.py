@@ -20,7 +20,7 @@ class Preference:
         self.priority = priority
 
     def __repr__(self):
-        return "%s %f %f" % (self.search_term, self.success_rate, self.priority)
+        return f"{self.search_term:s} {self.success_rate:f} {self.priority:f}"
 
     def is_candidate(self, sat):
         # check if sat's name or transmitter is in our list
@@ -78,7 +78,7 @@ def main(station_id, constrains_file, priorities_file):
     # save the priorities in the file
     with open(priorities_file, "w") as out_file:
         for elem in sat_list.values():
-            out_file.writelines("{} {} {}\n".format(elem[0], elem[1], elem[2]))
+            out_file.writelines(f"{elem[0]} {elem[1]} {elem[2]}\n")
 
     logging.info(f'Done, output file written: {priorities_file}')
 

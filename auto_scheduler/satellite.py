@@ -19,5 +19,6 @@ class Satellite:
         self.mode = mode
 
     def __repr__(self):
+        # pylint: disable=consider-using-f-string
         return "%s %s %d %d %d %s %s" % (self.id, self.transmitter, self.success_rate,
                                          self.good_count, self.data_count, self.mode, self.name)

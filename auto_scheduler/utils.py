@@ -52,6 +52,7 @@ def satellites_from_transmitters(transmitters, tles):
 
 
 def print_scheduledpass_summary(scheduledpasses, ground_station_id, printer=print):
+    # pylint: disable=consider-using-f-string
     printer("GS   | Sch | NORAD | Start time          | End time            | Duration |  El | " +
             "Priority | Transmitter UUID       | Mode       | Satellite name ")
 

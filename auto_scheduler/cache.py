@@ -21,10 +21,10 @@ class CacheManager:
         self.max_norad_cat_id = max_norad_cat_id
 
         self.transmitters_file = os.path.join(self.cache_dir,
-                                              "transmitters_%d.txt" % self.ground_station_id)
-        self.tles_file = os.path.join(self.cache_dir, "tles_%d.json" % self.ground_station_id)
+                                              f"transmitters_{self.ground_station_id:d}.txt")
+        self.tles_file = os.path.join(self.cache_dir, f"tles_{self.ground_station_id:d}.json")
         self.last_update_file = os.path.join(self.cache_dir,
-                                             "last_update_%d.txt" % ground_station_id)
+                                             f"last_update_{ground_station_id:d}.txt")
 
         # Create cache
         if not os.path.isdir(self.cache_dir):
@@ -53,6 +53,8 @@ class CacheManager:
         return False
 
     def update(self, force=False):
+        # pylint: disable=consider-using-f-string
+
         if not force and not self.update_needed():
             # Cache is valid, skip the update
             return

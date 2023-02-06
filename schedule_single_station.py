@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+# pylint: disable=consider-using-f-string
+
 from __future__ import division
 
 import argparse

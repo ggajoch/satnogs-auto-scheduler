@@ -72,7 +72,7 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
             if str(e).startswith("TLE elements are valid for a few weeks around their epoch"):
                 # pylint: disable=protected-access
                 age = observer.date.datetime() - sat_ephem._epoch.datetime()
-                print("ERROR: TLE too old: {}".format(age))
+                print(f"ERROR: TLE too old: {age}")
                 print(satellite.tle0.strip())
                 print(satellite.tle1.strip())
                 print(satellite.tle2.strip())

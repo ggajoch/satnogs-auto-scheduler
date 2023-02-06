@@ -24,6 +24,8 @@ def random_scheduler(passes, scheduledpasses, wait_time_seconds):
 
 
 def report_efficiency(scheduledpasses, passes):
+    # pylint: disable=consider-using-f-string
+
     if scheduledpasses:
         # Loop over passes
         start = False
