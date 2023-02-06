@@ -40,6 +40,8 @@ def main(station_id, constrains_file, priorities_file):
             if len(i) <= 1 or i[0] in ("#", "", " "):
                 continue
             tmp = i.split(",")
+            # pylint: disable=broad-exception-caught
+            # Catching too general exception Exception
             try:
                 prf = Preference(tmp[0], float(tmp[1]), float(tmp[2]))
                 prefered_priorities.append(prf)

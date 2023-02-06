@@ -52,7 +52,7 @@ def create_observer(lat, lon, alt, min_riseset=0.0):
 
 
 def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_duration):
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,disable=broad-exception-caught
     passes = []
 
     # Set start time
@@ -85,7 +85,10 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
             break  # there will be sats in our list that fall below horizon, skip
         except TypeError:
             break  # if there happens to be a non-EarthSatellite object in the list
-        except Exception:
+        except Exception as error:
+            print("WARNING: Unhandled exception. "
+                  "Please report this error via the satnogs-auto-scheduer Issue Tracker.")
+            print(error)
             break
 
         if tr is None:
