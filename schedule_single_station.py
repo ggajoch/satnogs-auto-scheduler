@@ -264,6 +264,10 @@ def schedule_single_station(ground_station_id, wait_time_seconds, min_priority, 
     # Read transmitters
     transmitters = read_transmitters(cache.transmitters_file)
 
+    # Read satellites
+    with open(cache.satellites_file) as fp_satellites:
+        satellites_catalog = json.load(fp_satellites)
+
     # Extract interesting satellites from receivable transmitters
     satellites = satellites_from_transmitters(transmitters, tles)
 
@@ -288,7 +292,7 @@ def schedule_single_station(ground_station_id, wait_time_seconds, min_priority, 
             logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",
                           float(satpass['azr']), float(satpass['azs']))
 
-            logging.debug(f"Original pass for {satellite.name}"
+            logging.debug(f"Original pass for {satellites_catalog[str(satellite.id)]['name']}"
                           f"is start {satpass['tr']} and end {satpass['ts']}")
             satpass = constrain_pass_to_max_observation_duration(satpass, max_observation_duration,
                                                                  tmin, tmax)
@@ -342,7 +346,10 @@ def schedule_single_station(ground_station_id, wait_time_seconds, min_priority, 
     # Report scheduling efficiency
     report_efficiency(scheduledpasses, passes)
 
-    print_scheduledpass_summary(scheduledpasses, ground_station_id, printer=logging.info)
+    print_scheduledpass_summary(scheduledpasses,
+                                ground_station_id,
+                                satellites_catalog,
+                                printer=logging.info)
 
     # Login and schedule passes
     passes_schedule = sorted((satpass for satpass in scheduledpasses if not satpass['scheduled']),

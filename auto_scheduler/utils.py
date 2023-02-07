@@ -49,16 +49,23 @@ def satellites_from_transmitters(transmitters, tles):
     return satellites
 
 
-def print_scheduledpass_summary(scheduledpasses, ground_station_id, printer=print):
+def print_scheduledpass_summary(scheduledpasses,
+                                ground_station_id,
+                                satellites_catalog,
+                                printer=print):
     # pylint: disable=consider-using-f-string
-    printer("GS   | Sch | NORAD | Start time          | End time            | Duration |  El | " +
-            "Priority | Transmitter UUID       | Mode       | Satellite name ")
+    printer("  GS | Sch | NORAD | Start time          | End time            | Duration |  El | " +
+            "Priority | Transmitter UUID       | Mode       | Freq   | Satellite name ")
+    printer(f"{' '*128} | misuse | ")
 
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
-        printer("%4d | %3s | %05d | %s | %s | %s  | %3.0f | %4.6f | %s | %-10s | %s" %
+        sat_entry = satellites_catalog[str(satpass['satellite']['id'])]
+
+        printer("%4d | %3s | %05d | %s | %s | %s  | %3.0f | %4.6f | %s | %-10s | %6s | %s" %
                 (ground_station_id, 'Y' if satpass['scheduled'] else 'N',
                  int(satpass['satellite']['id']), satpass['tr'].strftime("%Y-%m-%dT%H:%M:%S"),
                  satpass['ts'].strftime("%Y-%m-%dT%H:%M:%S"), str(satpass['td']).split(
                      ".", maxsplit=1)[0], float(satpass['altt']) if satpass['altt'] else 0.,
-                 satpass.get('priority', 0.0), satpass['transmitter'].get('uuid', ''),
-                 satpass['transmitter'].get('mode', ''), satpass['satellite']['name'].rstrip()))
+                 satpass.get('priority', 0.0), satpass['transmitter'].get(
+                     'uuid', ''), satpass['transmitter'].get('mode', ''),
+                 'Y' if sat_entry['is_frequency_violator'] else 'N', sat_entry['name']))
