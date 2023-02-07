@@ -240,10 +240,21 @@ def main():
                             only_priority, dryrun)
 
 
-def schedule_single_station(ground_station_id, wait_time_seconds, min_priority, tmax, tmin,
-                            ground_station, min_culmination, min_riseset, start_azimuth,
-                            stop_azimuth, max_observation_duration, priorities_filename,
-                            only_priority, dryrun):
+def schedule_single_station(ground_station_id,
+                            wait_time_seconds,
+                            min_priority,
+                            tmax,
+                            tmin,
+                            ground_station,
+                            min_culmination,
+                            min_riseset,
+                            start_azimuth,
+                            stop_azimuth,
+                            max_observation_duration,
+                            priorities_filename,
+                            only_priority,
+                            dryrun,
+                            skip_frequency_violators=True):
     # pylint: disable=too-many-arguments,too-many-locals
 
     # Create or update the transmitter & TLE cache
@@ -270,6 +281,12 @@ def schedule_single_station(ground_station_id, wait_time_seconds, min_priority, 
 
     # Extract interesting satellites from receivable transmitters
     satellites = satellites_from_transmitters(transmitters, tles)
+
+    # Skip satellites with frequency misuse (avoids scheduling permission errors)
+    if skip_frequency_violators:
+        satellites = list(
+            filter(lambda sat: not satellites_catalog[str(sat.id)]['is_frequency_violator'],
+                   satellites))
 
     # Find passes
     passes = []
