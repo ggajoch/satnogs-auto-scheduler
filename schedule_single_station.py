@@ -153,43 +153,35 @@ def main():
 
     # Settings
     ground_station_id = args.station
+
     if args.duration > 0.0:
         length_hours = args.duration
     else:
         length_hours = 1.0
+
     if args.wait <= 0:
         wait_time_seconds = 0
     elif args.wait <= 3600:
         wait_time_seconds = args.wait
     else:
         wait_time_seconds = 3600
+
     if args.min_priority < 0.0:
         min_priority = 0.0
     elif args.min_priority > 1.0:
         min_priority = 1.0
     else:
         min_priority = args.min_priority
-    schedule = not args.dryrun
-    only_priority = args.only_priority
-    priority_filename = args.priorities
 
     # Set time range
     tnow = datetime.strptime(args.starttime, "%Y-%m-%dT%H:%M:%S")
     tmin = tnow
     tmax = tnow + timedelta(hours=length_hours)
 
-    # Set max record duration
-    max_observation_duration = args.max_observation_duration
-
     # Get ground station information
     ground_station = get_groundstation_info(ground_station_id, args.allow_testing)
     if not ground_station:
         sys.exit()
-
-    # Create or update the transmitter & TLE cache
-    cache = CacheManager(ground_station_id, ground_station['antenna'], settings.CACHE_DIR,
-                         settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
-    cache.update()
 
     # Set minimum culmination elevation
     if args.min_culmination is None:
@@ -237,14 +229,33 @@ def main():
     else:
         stop_azimuth = args.stop_azimuth
 
+    max_observation_duration = args.max_observation_duration
+    priorities_filename = args.priorities
+    only_priority = args.only_priority
+    dryrun = args.dryrun
+
+    schedule_single_station(ground_station_id, wait_time_seconds, min_priority, tmax, tmin,
+                            ground_station, min_culmination, min_riseset, start_azimuth,
+                            stop_azimuth, max_observation_duration, priorities_filename,
+                            only_priority, dryrun)
+
+
+def schedule_single_station(ground_station_id, wait_time_seconds, min_priority, tmax, tmin,
+                            ground_station, min_culmination, min_riseset, start_azimuth,
+                            stop_azimuth, max_observation_duration, priorities_filename,
+                            only_priority, dryrun):
+    # pylint: disable=too-many-arguments,too-many-locals
+
+    # Create or update the transmitter & TLE cache
+    cache = CacheManager(ground_station_id, ground_station['antenna'], settings.CACHE_DIR,
+                         settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
+    cache.update()
+
     # Set observer
     observer = create_observer(ground_station['lat'],
                                ground_station['lng'],
                                ground_station['altitude'],
                                min_riseset=min_riseset)
-
-    # Minimum duration of a pass
-    min_pass_duration = settings.MIN_PASS_DURATION
 
     # Read tles
     with open(cache.tles_file) as fp_tles:
@@ -263,13 +274,13 @@ def main():
     # Loop over satellites
     for satellite in tqdm(satellites, disable=None):
         satellite_passes = find_passes(satellite, observer, tmin, tmax, min_culmination,
-                                       min_pass_duration)
+                                       settings.MIN_PASS_DURATION)
         for satpass in satellite_passes:
             # Constrain the passes to be within the allowable viewing window
             logging.debug("Original pass is azr %f and azs %f", float(satpass['azr']),
                           float(satpass['azs']))
             satpass = constrain_pass_to_az_window(satellite, observer, satpass, start_azimuth,
-                                                  stop_azimuth, min_pass_duration)
+                                                  stop_azimuth, settings.MIN_PASS_DURATION)
 
             if not satpass:
                 logging.debug("Pass did not meet azimuth window requirements. Removed.")
@@ -306,7 +317,7 @@ def main():
             })
             passes.append(satpass)
 
-    priorities, favorite_transmitters = read_priorities_transmitters(priority_filename)
+    priorities, favorite_transmitters = read_priorities_transmitters(priorities_filename)
 
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
@@ -336,7 +347,7 @@ def main():
     # Login and schedule passes
     passes_schedule = sorted((satpass for satpass in scheduledpasses if not satpass['scheduled']),
                              key=lambda satpass: satpass['tr'])
-    if schedule and passes_schedule:
+    if (not dryrun) and passes_schedule:
         logging.info('Scheduling all unscheduled passes listed above.')
         observations = ({
             'ground_station_id': ground_station_id,
