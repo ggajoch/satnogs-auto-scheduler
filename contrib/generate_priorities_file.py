@@ -49,7 +49,10 @@ def main(station_id, constrains_file, priorities_file):
             except Exception as err:
                 logging.error(err)
 
-    ground_station = get_groundstation_info(station_id, allow_testing=True)
+    ground_station = get_groundstation_info(station_id)
+    if not ground_station:
+        sys.exit()
+
     cache = CacheManager(station_id, ground_station['antenna'], settings.CACHE_DIR,
                          settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
     logging.info(f'Last cache update: {cache.last_update()}')

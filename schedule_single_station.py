@@ -18,7 +18,7 @@ from auto_scheduler.cache import CacheManager
 from auto_scheduler.io import read_priorities_transmitters, read_transmitters
 from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
     constrain_pass_to_max_observation_duration, create_observer, find_passes
-from auto_scheduler.satnogs_client import get_groundstation_info, \
+from auto_scheduler.satnogs_client import check_station_availability, get_groundstation_info, \
     get_scheduled_passes_from_network, schedule_observations_batch
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
 from auto_scheduler.utils import get_priority_passes, print_scheduledpass_summary, \
@@ -179,8 +179,8 @@ def main():
     tmax = tnow + timedelta(hours=length_hours)
 
     # Get ground station information
-    ground_station = get_groundstation_info(ground_station_id, args.allow_testing)
-    if not ground_station:
+    ground_station = get_groundstation_info(ground_station_id)
+    if not ground_station or not check_station_availability(ground_station, args.allow_testing):
         sys.exit()
 
     # Set minimum culmination elevation

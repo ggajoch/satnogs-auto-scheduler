@@ -1,7 +1,6 @@
 # pylint: disable=missing-timeout
 
 import logging
-import sys
 from datetime import datetime
 
 import requests
@@ -144,36 +143,62 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     return scheduledpasses
 
 
-def get_groundstation_info(ground_station_id, allow_testing):
+def get_groundstation_info(ground_station_id):
+    """
+    Fetch ground station information for the given station from SatNOGS Network.
 
+    Side-effects
+    - Logging
+
+    Arguments
+    ground_station_id (int): Ground Station ID
+
+    Returns
+    (dict): The requested ground station information or None
+    """
     logger.info(f"Requesting information for ground station {ground_station_id}")
 
-    # Loop
-    response = requests.get(f"{settings.NETWORK_BASE_URL}/api/stations/?id={ground_station_id}")
+    try:
+        response = requests.get(f"{settings.NETWORK_BASE_URL}/api/stations/?id={ground_station_id}")
+        response.raise_for_status()
+    except requests.HTTPError:
+        err = response.json()
+        logger.error(f'Failed to download ground station information. Error: {err}')
+        return None
 
     selected_stations = list(filter(lambda s: s['id'] == ground_station_id, response.json()))
 
     if not selected_stations:
         logger.info('No ground station information found!')
         # Exit if no ground station found
-        sys.exit()
+        return None
 
     logger.info('Ground station information retrieved!')
-    station = selected_stations[0]
-    logger.debug(station)
+    return selected_stations[0]
 
+
+def check_station_availability(station, allow_testing):
+    """
+    Check if scheduling is possible on the given ground station.
+
+    Side-effects
+    - Logging
+
+    Arguments
+    station (dict): Ground station information as given by SatNOGS Network
+    allow_testing (bool): If true the station is considered available for scheduling
+                          also when the station status is testing
+    """
     if station['status'] == 'Online' or (station['status'] == 'Testing' and allow_testing):
-        return station
+        return True
 
     if station['status'] == 'Testing' and not allow_testing:
-        logger.info(
-            f"Ground station {ground_station_id} is in testing mode but auto-scheduling is not "
-            "allowed. Use -T command line argument to enable scheduling.")
+        logger.info(f"Ground station {station['id']} is in testing mode but auto-scheduling is not "
+                    "allowed. Use -T command line argument to enable scheduling.")
     else:
-        logger.info(
-            f"Ground station {ground_station_id} neither in 'online' nor in 'testing' mode, "
-            "can't schedule!")
-    return {}
+        logger.info(f"Ground station {station['id']} neither in 'online' nor in 'testing' mode, "
+                    "can't schedule!")
+    return False
 
 
 def extract_scheduling_error(err):
