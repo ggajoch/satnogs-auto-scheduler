@@ -149,8 +149,7 @@ def main():
     numeric_level = args.log_level
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level")
-    logging.basicConfig(level=numeric_level,
-                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.basicConfig(level=numeric_level, format="%(message)s")
 
     # Settings
     ground_station_id = args.station
