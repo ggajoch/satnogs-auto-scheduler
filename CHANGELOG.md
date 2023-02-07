@@ -2,6 +2,9 @@
 
 ## unreleased
 
+- Added station-agnostic caching of SatNOGS Netowork transmitter statistics and the SatNOGS DB
+  satellite information. For now those files get updated each time the station-specific cache receives
+  an update.
 - Removed the deprecated method of fetching TLEs from various sources,
   always fetch TLEs from SatNOGS DB now.
 
