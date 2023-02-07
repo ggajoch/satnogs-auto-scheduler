@@ -349,7 +349,7 @@ def schedule_single_station(ground_station_id, wait_time_seconds, min_priority, 
                              key=lambda satpass: satpass['tr'])
     if (not dryrun) and passes_schedule:
         logging.info('Scheduling all unscheduled passes listed above.')
-        observations = ({
+        observations = list({
             'ground_station_id': ground_station_id,
             'transmitter_uuid': satpass['transmitter']['uuid'],
             'start': satpass['tr'],

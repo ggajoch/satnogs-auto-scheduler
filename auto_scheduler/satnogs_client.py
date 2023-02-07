@@ -171,6 +171,31 @@ def get_groundstation_info(ground_station_id, allow_testing):
     return {}
 
 
+def extract_scheduling_error(err):
+    """
+    Extract the reason that caused scheduling of a new observation to fail.
+    """
+    if 'non_field_errors' in err and err['non_field_errors'][
+            0][:38] == 'No permission to schedule observations':
+        reason = 'permission error'
+    else:
+        reason = 'reason provided by the server: {err}'
+    return reason
+
+
+def serialize_observation(satpass):
+    """
+    Convert future observation into the format expected by
+    the scheduling endpoint in SatNOGS Network
+    """
+    return {
+        'ground_station': satpass['ground_station_id'],
+        'transmitter_uuid': satpass['transmitter_uuid'],
+        'start': satpass['start'].strftime("%Y-%m-%d %H:%M:%S"),
+        'end': satpass['end'].strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+
 def schedule_observations_batch(observations):
     """
     Schedule observations on satnogs-network.
@@ -181,12 +206,7 @@ def schedule_observations_batch(observations):
       - start: observation start - datetime
       - end: observation end - datetime
     """
-    observations_serialized = list({
-        'ground_station': satpass['ground_station_id'],
-        'transmitter_uuid': satpass['transmitter_uuid'],
-        'start': satpass['start'].strftime("%Y-%m-%d %H:%M:%S"),
-        'end': satpass['end'].strftime("%Y-%m-%d %H:%M:%S")
-    } for satpass in observations)
+    observations_serialized = list(serialize_observation(satpass) for satpass in observations)
 
     try:
         response = requests.post(f'{settings.NETWORK_BASE_URL}/api/observations/',
@@ -196,29 +216,33 @@ def schedule_observations_batch(observations):
         logger.debug("Scheduled {len(observations_serialized)} passes!")
     except requests.HTTPError:
         err = response.json()
-        logger.error(f"Failed to batch-schedule the passes. Reason: {err}")
-        logger.error("Fall-back to single-pass scheduling.")
-        schedule_observations(observations_serialized)
+        reason = extract_scheduling_error(err)
+
+        logger.error('Failed to batch schedule due an error in one of the requested jobs, '
+                     f'reason: {reason}. '
+                     'Fall-back to single-pass scheduling.')
+        for observation in observations:
+            schedule_observation(observation)
 
 
-def schedule_observations(observations_serialized):
+def schedule_observation(observation):
     """
-    Schedule observations on satnogs-network.
+    Schedule observation in SatNOGS Network.
 
-    observations: list of dicts, keys:
+    observation: dict, keys:
       - ground_station: ground station id - int
       - transmitter_uuid: transmitter uuid - str
-      - start: observation start - str, "%Y-%m-%d %H:%M:%S"
-      - end: observation end - str, "%Y-%m-%d %H:%M:%S"
+      - start: observation start - datetime
+      - end: observation end - datetime
     """
-    for observation in observations_serialized:
-        try:
-            response = requests.post(
-                f'{settings.NETWORK_BASE_URL}/api/observations/',
-                json=[observation],
-                headers={'Authorization': f'Token {settings.SATNOGS_API_TOKEN}'})
-            response.raise_for_status()
-            logger.debug("Scheduled pass!")
-        except requests.HTTPError:
-            err = response.json()
-            logger.error(f"Failed to schedule the pass at {observation['end']}. Reason: {err}")
+    try:
+        response = requests.post(f'{settings.NETWORK_BASE_URL}/api/observations/',
+                                 json=[serialize_observation(observation)],
+                                 headers={'Authorization': f'Token {settings.SATNOGS_API_TOKEN}'})
+        response.raise_for_status()
+        logger.info("Scheduled pass at {observation['start']:%Y-%m-%dT%H:%M:%S}!")
+    except requests.HTTPError:
+        err = response.json()
+        reason = extract_scheduling_error(err)
+        logger.error(
+            f"Failed to schedule pass at {observation['start']:%Y-%m-%dT%H:%M:%S}, {reason}.")
