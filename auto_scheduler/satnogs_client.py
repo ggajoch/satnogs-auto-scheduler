@@ -33,18 +33,23 @@ def get_paginated_endpoint(url, max_entries=None, authenticated=False):
 
 
 def get_satellite_info():
-    # Open session
+    """
+    Fetch all satellites from SatNOGS DB and extract a list of all Satellites which are 'alive'.
+    """
     logger.info("Fetching satellite information from DB.")
     response = requests.get(f'{settings.DB_BASE_URL}/api/satellites')
-    logger.info("Satellites received!")
+    satellites = response.json()
 
     # Select alive satellites
-    norad_cat_ids = []
-    for obs in response.json():
-        if obs["status"] == "alive":
-            norad_cat_ids.append(obs["norad_cat_id"])
+    norad_cat_ids_alive = []
+    satellites_by_norad_id = {}
+    for entry in satellites:
+        if entry["status"] == "alive":
+            norad_cat_ids_alive.append(entry["norad_cat_id"])
+        if entry['norad_cat_id'] is not None:
+            satellites_by_norad_id[entry["norad_cat_id"]] = entry
 
-    return norad_cat_ids
+    return norad_cat_ids_alive, satellites_by_norad_id
 
 
 def get_active_transmitter_info(fmin, fmax):

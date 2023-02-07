@@ -3,8 +3,6 @@ import logging
 import os
 from datetime import datetime
 
-from satellite_tle import fetch_tles
-
 from auto_scheduler import settings
 from auto_scheduler.satnogs_client import get_active_transmitter_info, get_satellite_info, \
     get_tles, get_transmitter_stats
@@ -74,8 +72,7 @@ class CacheManager:
                                                            antenna["frequency_max"]):
                 transmitters[transmitter['uuid']] = transmitter
 
-        # Get satellites which are alive
-        alive_norad_cat_ids = get_satellite_info()
+        alive_norad_cat_ids, _ = get_satellite_info()
 
         # Extract NORAD IDs from transmitters
         norad_cat_ids = sorted(
@@ -108,29 +105,28 @@ class CacheManager:
 
     def update_tles(self, norad_cat_ids):
         """
-        Download TLEs using one of the following methods:
-        - Authenticated access to SatNOGS DB  (SatNOGS DB API Token required)
-        - satellite_tle.fetch_tles, which collects data from various sources.
-          This will take quite some time and a lot of seperate requests depending
-          on the type and number of requested objects (slow, DEPRECATED)
-        """
-        if settings.SATNOGS_DB_API_TOKEN:
-            # Method 1: Use authenticated SatNOGS DB access
-            logging.info("Downloading TLEs from satnogs-db.")
-            tle_data = get_tles()
+        Download TLEs from SatNOGS DB.
+        Requires a SatNOGS DB API Token!
 
-            # Filter objects of interest only
-            tles = list(filter(lambda entry: entry['norad_cat_id'] in norad_cat_ids, tle_data))
-        else:
-            # Method 2: Use satellite_tle.fetch_tles (slow!)
-            tle_data = fetch_tles(norad_cat_ids)
-            tles = [{
-                'norad_cat_id': norad_cat_id,
-                'tle_source': source,
-                'tle0': tle[0],
-                'tle1': tle[1],
-                'tle2': tle[2]
-            } for norad_cat_id, (source, tle) in tle_data.items()]
+        Deprecation Notes:
+        The previous method of using satellite_tle.fetch_tles was removed!
+
+        Old description:
+        This method collects data from various sources. This will take quite some time and
+        a lot of seperate requests depending on the type and
+        number of requested objects (slow, DEPRECATED)
+        """
+        if not settings.SATNOGS_DB_API_TOKEN:
+            logging.error('The previous method of fetching TLEs from various sorces was removed. '
+                          'Please configure SATNOGS_DB_API_TOKEN to enable the new method of '
+                          'fetching TLEs from SatNOGS DB! ')
+
+        # Method 1: Use authenticated SatNOGS DB access
+        logging.info("Downloading TLEs from satnogs-db.")
+        tle_data = get_tles()
+
+        # Filter objects of interest only
+        tles = list(filter(lambda entry: entry['norad_cat_id'] in norad_cat_ids, tle_data))
 
         with open(self.tles_file, "w") as fp_tles:
             json.dump(tles, fp_tles, indent=2)

@@ -1,5 +1,16 @@
 # Changelog
 
+## unreleased
+
+- Removed the deprecated method of fetching TLEs from various sources,
+  always fetch TLEs from SatNOGS DB now.
+
+### Breaking Changes
+
+The SatNOGS DB API Token is always required now. Thus TLEs are fetched from SatNOGS DB diretly
+which has multiple benefits. It is much faster than the old method, removes errors when a satellite
+entry is using TLEs produced by "new" sources (e.g. SatNOGS Team) and enables output improvements.
+
 ## 0.2 - 2023-02-06 - 2b77522
 
 First release in 2023.

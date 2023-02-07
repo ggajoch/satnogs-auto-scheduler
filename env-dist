@@ -1,7 +1,7 @@
 # Copy this file to .env and complete the information needed
 
-# Your SatNOGS network API token
+# Your SatNOGS Network API token
 SATNOGS_API_TOKEN = ''
 
-# Your SatNOGS DB API token (optional, but recommended)
+# Your SatNOGS DB API token
 SATNOGS_DB_API_TOKEN = ''

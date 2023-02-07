@@ -27,7 +27,9 @@ satnogs-auto-scheduler 0+untagged.160.g3a8e121
 
 ## Configuration
 
-Copy the env-dist file to .env and edit this file to add your SatNOGS Network API token.
+Copy the env-dist file to .env and edit this file to add your SatNOGS Network API Token & DB API Token.
+
+NOTE: Both Tokens are required now to make sure that the same TLEs as available in SatNOGS DB are used!
 
 ## Test run
 
