@@ -32,7 +32,11 @@ def read_priorities_transmitters(filename):
     # read the following format
     #   43017 1. KgazZMKEa74VnquqXLwAvD
 
-    if not filename or not os.path.exists(filename):
+    if not filename:
+        logger.debug('No priority file defined.')
+        return ({}, {})
+
+    if not os.path.exists(filename):
         # No priorites file found, return empty objects
         logger.warning('Could not read priority file %s.', filename)
         return ({}, {})
