@@ -43,7 +43,7 @@ def report_efficiency(scheduledpasses, passes):
         duration_total = tmax - tmin
 
         efficency = 100 * duration_scheduled.total_seconds() / duration_total.total_seconds()
-        logging.info(f"{len(scheduledpasses):d} passes selected out of {len(passes):d}, "
+        logging.info(f"{len(scheduledpasses)} passes selected out of {len(passes)}, "
                      f"{duration_scheduled.total_seconds():.0f} s out of "
                      f"{duration_total.total_seconds():.0f} s "
                      f"at {efficency:.3f}% efficiency")

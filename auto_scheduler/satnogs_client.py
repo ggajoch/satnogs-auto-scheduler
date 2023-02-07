@@ -86,10 +86,10 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
     client = requests.session()
 
     # Loop
-    next_url = f'{settings.NETWORK_BASE_URL}/api/observations/?ground_station={ground_station:d}'
+    next_url = f'{settings.NETWORK_BASE_URL}/api/observations/?ground_station={ground_station}'
     scheduledpasses = []
 
-    logger.info(f"Requesting scheduled passes for ground station {ground_station:d}")
+    logger.info(f"Requesting scheduled passes for ground station {ground_station}")
     # Fetch observations until the time of the end of the last fetched observation happends to be
     # before the start time of the selected timerange for scheduling
     # NOTE: This algorithm is based on the order in which the API returns the observations, i.e.
@@ -136,16 +136,16 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
             # Last fetched observation is older than the ROI for scheduling, end loop.
             break
 
-    logger.info(f"Scheduled passes for ground station {ground_station:d} retrieved!")
+    logger.info(f"Scheduled passes for ground station {ground_station} retrieved!")
     return scheduledpasses
 
 
 def get_groundstation_info(ground_station_id, allow_testing):
 
-    logger.info(f"Requesting information for ground station {ground_station_id:d}")
+    logger.info(f"Requesting information for ground station {ground_station_id}")
 
     # Loop
-    response = requests.get(f"{settings.NETWORK_BASE_URL}/api/stations/?id={ground_station_id:d}")
+    response = requests.get(f"{settings.NETWORK_BASE_URL}/api/stations/?id={ground_station_id}")
 
     selected_stations = list(filter(lambda s: s['id'] == ground_station_id, response.json()))
 
@@ -163,11 +163,11 @@ def get_groundstation_info(ground_station_id, allow_testing):
 
     if station['status'] == 'Testing' and not allow_testing:
         logger.info(
-            f"Ground station {ground_station_id:d} is in testing mode but auto-scheduling is not "
+            f"Ground station {ground_station_id} is in testing mode but auto-scheduling is not "
             "allowed. Use -T command line argument to enable scheduling.")
     else:
         logger.info(
-            f"Ground station {ground_station_id:d} neither in 'online' nor in 'testing' mode, "
+            f"Ground station {ground_station_id} neither in 'online' nor in 'testing' mode, "
             "can't schedule!")
     return {}
 
@@ -195,7 +195,7 @@ def schedule_observations_batch(observations):
             json=observations_serialized,
             headers={'Authorization': 'Token {}'.format(settings.SATNOGS_API_TOKEN)})
         response.raise_for_status()
-        logger.debug("Scheduled %d passes!", len(observations_serialized))
+        logger.debug("Scheduled {len(observations_serialized)} passes!")
     except requests.HTTPError:
         err = response.json()
         logger.error("Failed to batch-schedule the passes. Reason: %s", err)
@@ -223,4 +223,4 @@ def schedule_observations(observations_serialized):
             logger.debug("Scheduled pass!")
         except requests.HTTPError:
             err = response.json()
-            logger.error(f"Failed to schedule the pass at {observation['end']:s}. Reason: {err:s}")
+            logger.error(f"Failed to schedule the pass at {observation['end']}. Reason: {err}")

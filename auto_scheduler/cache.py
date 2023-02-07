@@ -23,10 +23,9 @@ class CacheManager:
         self.max_norad_cat_id = max_norad_cat_id
 
         self.transmitters_file = os.path.join(self.cache_dir,
-                                              f"transmitters_{self.ground_station_id:d}.txt")
-        self.tles_file = os.path.join(self.cache_dir, f"tles_{self.ground_station_id:d}.json")
-        self.last_update_file = os.path.join(self.cache_dir,
-                                             f"last_update_{ground_station_id:d}.txt")
+                                              f"transmitters_{self.ground_station_id}.txt")
+        self.tles_file = os.path.join(self.cache_dir, f"tles_{self.ground_station_id}.json")
+        self.last_update_file = os.path.join(self.cache_dir, f"last_update_{ground_station_id}.txt")
 
         # Create cache
         if not os.path.isdir(self.cache_dir):

@@ -258,7 +258,7 @@ def main():
 
     # Find passes
     passes = []
-    logging.info(f'Finding all passes for {len(satellites):d} satellites:')
+    logging.info(f'Finding all passes for {len(satellites)} satellites:')
 
     # Loop over satellites
     for satellite in tqdm(satellites, disable=None):
@@ -277,12 +277,12 @@ def main():
             logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",
                           float(satpass['azr']), float(satpass['azs']))
 
-            logging.debug(f"Original pass for {satellite.name:s}"
-                          f"is start {satpass['tr']:s} and end {satpass['ts']:s}")
+            logging.debug(f"Original pass for {satellite.name}"
+                          f"is start {satpass['tr']} and end {satpass['ts']}")
             satpass = constrain_pass_to_max_observation_duration(satpass, max_observation_duration,
                                                                  tmin, tmax)
-            logging.debug(f"Adjusted max observation duration for {satellite.name:s} "
-                          f"to start {satpass['tr']:s} and end {satpass['ts']:s}")
+            logging.debug(f"Adjusted max observation duration for {satellite.name} "
+                          f"to start {satpass['tr']} and end {satpass['ts']}")
 
             # pylint: disable=duplicate-code
             # NOTE: The transmitter was already added by find_passes initially.
@@ -310,8 +310,9 @@ def main():
 
     # List of scheduled passes
     scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
-    logging.info(f"Found {len(scheduledpasses):d} scheduled passes "
-                 f"between {tmin:s} and {tmax:s} on ground station {ground_station_id:d}")
+
+    logging.info(f"Found {len(scheduledpasses)} scheduled passes "
+                 f"between {tmin} and {tmax} on ground station {ground_station_id}")
 
     # Get passes of priority objects
     prioritypasses, normalpasses = get_priority_passes(passes, priorities, favorite_transmitters,
