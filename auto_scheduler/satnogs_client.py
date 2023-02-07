@@ -1,4 +1,4 @@
-# pylint: disable=consider-using-f-string,missing-timeout
+# pylint: disable=missing-timeout
 
 import logging
 import sys
@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 def get_paginated_endpoint(url, max_entries=None, authenticated=False):
     if authenticated:
-        response = requests.get(
-            url=url, headers={'Authorization': 'Token {}'.format(settings.SATNOGS_DB_API_TOKEN)})
+        response = requests.get(url=url,
+                                headers={'Authorization': f'Token {settings.SATNOGS_DB_API_TOKEN}'})
     else:
         response = requests.get(url=url)
     response.raise_for_status()
@@ -70,14 +70,13 @@ def get_active_transmitter_info(fmin, fmax):
 
 
 def get_tles():
-    tle_data = get_paginated_endpoint('{}/api/tle/'.format(settings.DB_BASE_URL),
-                                      authenticated=True)
+    tle_data = get_paginated_endpoint(f'{settings.DB_BASE_URL}/api/tle/', authenticated=True)
     return tle_data
 
 
 def get_transmitter_stats():
     logger.debug("Requesting transmitter success rates for all satellite")
-    transmitters = get_paginated_endpoint('{}/api/transmitters/'.format(settings.NETWORK_BASE_URL))
+    transmitters = get_paginated_endpoint(f'{settings.NETWORK_BASE_URL}/api/transmitters/')
     return transmitters
 
 
@@ -190,15 +189,14 @@ def schedule_observations_batch(observations):
     } for satpass in observations)
 
     try:
-        response = requests.post(
-            '{}/api/observations/'.format(settings.NETWORK_BASE_URL),
-            json=observations_serialized,
-            headers={'Authorization': 'Token {}'.format(settings.SATNOGS_API_TOKEN)})
+        response = requests.post(f'{settings.NETWORK_BASE_URL}/api/observations/',
+                                 json=observations_serialized,
+                                 headers={'Authorization': f'Token {settings.SATNOGS_API_TOKEN}'})
         response.raise_for_status()
         logger.debug("Scheduled {len(observations_serialized)} passes!")
     except requests.HTTPError:
         err = response.json()
-        logger.error("Failed to batch-schedule the passes. Reason: %s", err)
+        logger.error(f"Failed to batch-schedule the passes. Reason: {err}")
         logger.error("Fall-back to single-pass scheduling.")
         schedule_observations(observations_serialized)
 
