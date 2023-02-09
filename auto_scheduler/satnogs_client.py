@@ -1,5 +1,3 @@
-# pylint: disable=missing-timeout
-
 import logging
 from datetime import datetime
 
@@ -9,24 +7,85 @@ from auto_scheduler import settings
 
 logger = logging.getLogger(__name__)
 
+TIMEOUT = 30  # seconds
 
-def get_paginated_endpoint(url, max_entries=None, authenticated=False):
-    if authenticated:
-        response = requests.get(url=url,
-                                headers={'Authorization': f'Token {settings.SATNOGS_DB_API_TOKEN}'})
-    else:
-        response = requests.get(url=url)
-    response.raise_for_status()
 
-    data = response.json()
+class APIRequestError(IOError):
+    """
+    There was an error fetching the requested resource, e.g.
+    HTTPError, ConnectionError, Timeout
+    """
 
-    while 'next' in response.links and (not max_entries or len(data) < max_entries):
-        next_page_url = response.links['next']['url']
 
-        response = requests.get(url=next_page_url)
+def get_paginated_endpoint(url,
+                           max_entries=None,
+                           token=None,
+                           max_retries=0,
+                           filter_output_callback=None,
+                           stop_criterion_callback=None):
+    # pylint: disable=too-many-arguments
+    """
+    Fetch data from a SatNOGS Network/DB API endpoint.
+
+    Arguments
+    url (str):          The URL of the API endpoint
+    max_entries (int):  The maximum number of requested entries. This allows indirect limiting
+                        of the number of pages to be fetched.
+                        Returned data might have slightly more elements.
+                        Default: None - Fetch all available pages
+    token (str):        Authorization Token.
+                        Default: None - Use no authentication.
+    timeout (int):      Requests timeout in Seconds
+                        Default: 3 Seconds
+    max_retries (int) : The maximum number of retries to attempt per request.
+                        This applies only to failed DNS lookups, socket connections and
+                        connection timeouts.
+                        Default: 0 - No retries.
+    """
+    try:
+        session = requests.Session()
+        session.mount('https://', requests.adapters.HTTPAdapter(max_retries=max_retries))
+
+        if token:
+            headers = {'Authorization': f'Token {token}'}
+        else:
+            headers = None
+
+        data = []
+
+        response = session.get(url=url, headers=headers, timeout=TIMEOUT)
         response.raise_for_status()
 
-        data.extend(response.json())
+        new_data = response.json()
+        if filter_output_callback:
+            data.extend(filter_output_callback(new_data))
+        else:
+            data.extend(new_data)
+
+        if stop_criterion_callback and stop_criterion_callback(new_data):
+            return data
+
+        while 'next' in response.links and (not max_entries or len(data) < max_entries):
+            next_page_url = response.links['next']['url']
+
+            response = session.get(url=next_page_url, headers=headers, timeout=TIMEOUT)
+            response.raise_for_status()
+
+            new_data = response.json()
+            if filter_output_callback:
+                data.extend(filter_output_callback(new_data))
+            else:
+                data.extend(new_data)
+
+            if stop_criterion_callback and stop_criterion_callback(new_data):
+                break
+    except requests.HTTPError as exception:
+        err = response.json()
+        logger.error(f'API Request for {url} failed, error: {err}')
+        raise APIRequestError from exception
+    except requests.exceptions.ReadTimeout as exception:
+        logger.error(f'Timeout of API Request for {url}')
+        raise APIRequestError from exception
 
     return data
 
@@ -35,9 +94,7 @@ def get_satellite_info():
     """
     Fetch all satellites from SatNOGS DB and extract a list of all Satellites which are 'alive'.
     """
-    logger.info("Fetching satellite information from DB.")
-    response = requests.get(f'{settings.DB_BASE_URL}/api/satellites')
-    satellites = response.json()
+    satellites = get_paginated_endpoint(f'{settings.DB_BASE_URL}/api/satellites')
 
     # Select alive satellites
     norad_cat_ids_alive = []
@@ -52,66 +109,71 @@ def get_satellite_info():
 
 
 def get_active_transmitter_info(fmin, fmax):
-    # Open session
-    logger.info("Fetching transmitter information from DB.")
-    response = requests.get(f'{settings.DB_BASE_URL}/api/transmitters')
-    logger.info("Transmitters received!")
+    """
+    Fetch all transmitters from SatNOGS DB.
 
-    # Loop
-    transmitters = []
-    for obs in response.json():
-        if obs["downlink_low"]:
-            if obs["status"] == "active" and obs["downlink_low"] > fmin and obs[
-                    "downlink_low"] <= fmax and obs["norad_cat_id"] is not None:
+    The transmitters are filtered for the following criteria:
+    - 'status': active
+    - 'dowlink_low' is defined
+    - 'downlink_low' within (fmin, fmax] frequency band
+    - associated with a satellite, via 'norad_cat_id'
+    """
+    transmitters = get_paginated_endpoint(f'{settings.DB_BASE_URL}/api/transmitters')
+
+    transmitters_filtered = []
+    for entry in transmitters:
+        if entry["downlink_low"]:
+            if entry["status"] == "active" and (fmin < entry["downlink_low"] >=
+                                                fmax) and entry["norad_cat_id"] is not None:
                 transmitter = {
-                    "norad_cat_id": obs["norad_cat_id"],
-                    "uuid": obs["uuid"],
-                    "mode": obs["mode"]
+                    "norad_cat_id": entry["norad_cat_id"],
+                    "uuid": entry["uuid"],
+                    "mode": entry["mode"]
                 }
-                transmitters.append(transmitter)
-    logger.info("Transmitters filtered based on ground station capability.")
-    return transmitters
+                transmitters_filtered.append(transmitter)
+
+    return transmitters_filtered
 
 
 def get_tles():
-    tle_data = get_paginated_endpoint(f'{settings.DB_BASE_URL}/api/tle/', authenticated=True)
+    """
+    Fetch latest TLEs from SatNOGS DB.
+    """
+    tle_data = get_paginated_endpoint(f'{settings.DB_BASE_URL}/api/tle/',
+                                      token=settings.SATNOGS_DB_API_TOKEN)
     return tle_data
 
 
 def get_transmitter_stats():
-    logger.debug("Requesting transmitter success rates for all satellite")
+    """
+    Fetch transmitter statistics from SatNOGS Network.
+
+    # Note
+    This operation takes some minutes. It fetches many pages
+    (78 pages as of 2023-01, ~4min wall clock time). Cache wisely!
+    """
     transmitters = get_paginated_endpoint(f'{settings.NETWORK_BASE_URL}/api/transmitters/')
     return transmitters
 
 
 def get_scheduled_passes_from_network(ground_station, tmin, tmax):
-    # Get first page
-    client = requests.session()
+    """
+    Fetch observations for a specific ground station and time range from SatNOGS Network.
 
-    # Loop
-    next_url = f'{settings.NETWORK_BASE_URL}/api/observations/?ground_station={ground_station}'
-    scheduledpasses = []
+    # Note
+    This algorithm is based on the order in which the API returns the observations, i.e.
+    most recent observations are returned at first! It fetches observations until the end of
+    the last fetched observation happens to be before the start time of the selected time range.
 
-    logger.info(f"Requesting scheduled passes for ground station {ground_station}")
-    # Fetch observations until the time of the end of the last fetched observation happends to be
-    # before the start time of the selected timerange for scheduling
-    # NOTE: This algorithm is based on the order in which the API returns the observations, i.e.
-    # most recent observations are returned at first!
-    while next_url:
-        response = client.get(next_url)
+    # Arguments
+    ground_station (int): Ground Station ID
+    tmin (datetime.datetime): Filter start time
+    tmax (datetime.datetime): Filter end time
+    """
 
-        if 'next' in response.links:
-            next_url = response.links['next']['url']
-        else:
-            logger.debug("No further pages with observations")
-            next_url = None
-
-        if not response.json():
-            logger.info("Ground station has no observations yet")
-            break
-
-        # response.json() is a list of dicts/observations
-        for obs in response.json():
+    def filter_callback(data):
+        scheduled_passes = []
+        for obs in data:
             start = datetime.strptime(obs['start'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
             end = datetime.strptime(obs['end'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
             satpass = {
@@ -133,14 +195,18 @@ def get_scheduled_passes_from_network(ground_station, tmin, tmax):
 
             if satpass['ts'] > tmin and satpass['tr'] < tmax:
                 # Only store observations which are during the ROI for scheduling
-                scheduledpasses.append(satpass)
+                scheduled_passes.append(satpass)
+        return scheduled_passes
 
-        if satpass['ts'] < tmin:
-            # Last fetched observation is older than the ROI for scheduling, end loop.
-            break
+    def stop_criterion_callback(data):
+        # Last fetched observation is older than the ROI for scheduling, end loop.
+        end_time = datetime.strptime(data[-1]['end'].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+        return end_time < tmin
 
-    logger.info(f"Scheduled passes for ground station {ground_station} retrieved!")
-    return scheduledpasses
+    return get_paginated_endpoint(
+        f'{settings.NETWORK_BASE_URL}/api/observations/?ground_station={ground_station}',
+        filter_output_callback=filter_callback,
+        stop_criterion_callback=stop_criterion_callback)
 
 
 def get_groundstation_info(ground_station_id):
@@ -156,24 +222,16 @@ def get_groundstation_info(ground_station_id):
     Returns
     (dict): The requested ground station information or None
     """
-    logger.info(f"Requesting information for ground station {ground_station_id}")
+    stations = get_paginated_endpoint(
+        f'{settings.NETWORK_BASE_URL}/api/stations/?id={ground_station_id}')
 
-    try:
-        response = requests.get(f"{settings.NETWORK_BASE_URL}/api/stations/?id={ground_station_id}")
-        response.raise_for_status()
-    except requests.HTTPError:
-        err = response.json()
-        logger.error(f'Failed to download ground station information. Error: {err}')
-        return None
-
-    selected_stations = list(filter(lambda s: s['id'] == ground_station_id, response.json()))
+    selected_stations = list(filter(lambda s: s['id'] == ground_station_id, stations))
 
     if not selected_stations:
         logger.info('No ground station information found!')
         # Exit if no ground station found
         return None
 
-    logger.info('Ground station information retrieved!')
     return selected_stations[0]
 
 
@@ -236,6 +294,8 @@ def schedule_observations_batch(observations):
       - start: observation start - datetime
       - end: observation end - datetime
     """
+    # pylint: disable=missing-timeout
+
     observations_serialized = list(serialize_observation(satpass) for satpass in observations)
 
     try:
@@ -265,6 +325,8 @@ def schedule_observation(observation):
       - start: observation start - datetime
       - end: observation end - datetime
     """
+    # pylint: disable=missing-timeout
+
     try:
         response = requests.post(f'{settings.NETWORK_BASE_URL}/api/observations/',
                                  json=[serialize_observation(observation)],

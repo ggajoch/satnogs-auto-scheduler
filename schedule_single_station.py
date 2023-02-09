@@ -18,8 +18,8 @@ from auto_scheduler.cache import CacheManager
 from auto_scheduler.io import read_priorities_transmitters, read_transmitters
 from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
     constrain_pass_to_max_observation_duration, create_observer, find_passes
-from auto_scheduler.satnogs_client import check_station_availability, get_groundstation_info, \
-    get_scheduled_passes_from_network, schedule_observations_batch
+from auto_scheduler.satnogs_client import APIRequestError, check_station_availability, \
+    get_groundstation_info, get_scheduled_passes_from_network, schedule_observations_batch
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
 from auto_scheduler.utils import get_priority_passes, print_scheduledpass_summary, \
     satellites_from_transmitters
@@ -290,7 +290,7 @@ def schedule_single_station(ground_station_id,
 
     # Find passes
     passes = []
-    logging.info(f'Finding all passes for {len(satellites)} satellites:')
+    logging.info(f'Search passes for {len(satellites)} satellites:')
 
     # Loop over satellites
     for satellite in tqdm(satellites, disable=None):
@@ -341,10 +341,15 @@ def schedule_single_station(ground_station_id,
     priorities, favorite_transmitters = read_priorities_transmitters(priorities_filename)
 
     # List of scheduled passes
-    scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
+    try:
+        logging.info('Download list of scheduled passes from SatNOGS Network...')
+        scheduledpasses = get_scheduled_passes_from_network(ground_station_id, tmin, tmax)
+    except APIRequestError:
+        logging.error('Download from SatNOGS Network failed.')
+        sys.exit(1)
 
     logging.info(f"Found {len(scheduledpasses)} scheduled passes "
-                 f"between {tmin} and {tmax} on ground station {ground_station_id}")
+                 f"between {tmin} and {tmax} on ground station {ground_station_id}.")
 
     # Get passes of priority objects
     prioritypasses, normalpasses = get_priority_passes(passes, priorities, favorite_transmitters,
