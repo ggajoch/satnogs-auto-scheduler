@@ -52,10 +52,7 @@ def satellites_from_transmitters(transmitters, tles):
     for transmitter in transmitters:
         for tle in tles:
             if tle['norad_cat_id'] == transmitter['norad_cat_id']:
-                satellites.append(
-                    Satellite(tle, transmitter['uuid'], transmitter['success_rate'],
-                              transmitter['good_count'], transmitter['data_count'],
-                              transmitter['mode']))
+                satellites.append(Satellite(tle, transmitter))
     return satellites
 
 
