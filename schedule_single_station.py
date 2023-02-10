@@ -15,7 +15,7 @@ from tqdm import tqdm
 from auto_scheduler import __version__ as auto_scheduler_version
 from auto_scheduler import settings
 from auto_scheduler.cache import CacheManager
-from auto_scheduler.io import read_priorities_transmitters, read_transmitters
+from auto_scheduler.io import read_priorities_transmitters, read_transmitters_stats
 from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
     constrain_pass_to_max_observation_duration, create_observer, find_passes
 from auto_scheduler.satnogs_client import APIRequestError, check_station_availability, \
@@ -277,14 +277,14 @@ def schedule_single_station(ground_station_id,
         tles = json.load(fp_tles)
 
     # Read transmitters
-    transmitters = read_transmitters(cache.transmitters_file)
+    transmitters_stats = read_transmitters_stats(cache.transmitters_file)
 
     # Read satellites
     with open(cache.satellites_file) as fp_satellites:
         satellites_catalog = json.load(fp_satellites)
 
     # Extract interesting satellites from receivable transmitters
-    satellites = satellites_from_transmitters(transmitters, tles)
+    satellites = satellites_from_transmitters(transmitters_stats, tles)
 
     # Skip satellites with frequency misuse (avoids scheduling permission errors)
     if skip_frequency_violators:

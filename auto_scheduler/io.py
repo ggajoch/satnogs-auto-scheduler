@@ -5,18 +5,26 @@ import os
 logger = logging.getLogger(__name__)
 
 
-def read_transmitters(transmitters_file):
-    with open(transmitters_file, "r") as fp_transmitters:
+def read_transmitters_stats(filename):
+    """
+    Read transmitter statistics from file
+
+    # Return type
+    list(dict)
+    """
+    transmitters_stats = []
+    with open(filename, "r") as fp_transmitters:
         for line in fp_transmitters.readlines():
             item = line.split()
-            yield {
+            transmitters_stats.append({
                 "norad_cat_id": int(item[0]),
                 "uuid": item[1],
                 "success_rate": float(item[2]) / 100.0,
                 "good_count": int(item[3]),
                 "data_count": int(item[4]),
                 "mode": item[5]
-            }
+            })
+    return transmitters_stats
 
 
 def strip_comments(csv_file):
