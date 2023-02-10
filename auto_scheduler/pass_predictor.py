@@ -301,6 +301,21 @@ def constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin,
 
 
 def find_constrained_passes(satellite, observer, constraints):
+    """
+    Find passes of one satellite over a specified ground station while
+    taking multiple constraints into account.
+
+    # Supported constraints
+    - time range (tmin (datetime), tmax (datetime))
+    - pass duration (min (float), max (float)): Pass duration in minutes
+    - azimuth window (start (float), stop (float)): azimuth in degrees; Use (0.0, 360.0) to disable
+    - min_culmination (float): Minimum culmination elevation in degrees; Use 0.0 to disable
+
+    # Arguments
+    satellite (auto_scheduler.Satellite): The satellite
+    observer (ephem.Observer): The observer
+    constaints (dict): The constraints
+    """
     # Un-pack arguments
     tmin, tmax = constraints['time']
     min_pass_duration, max_pass_duration = constraints['pass_duration']
