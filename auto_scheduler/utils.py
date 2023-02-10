@@ -36,7 +36,11 @@ def get_priority_passes(passes, priorities, favorite_transmitters, only_priority
 
 def satellites_from_transmitters(transmitters, tles):
     '''
-    Extract interesting satellites from receivable transmitters
+    Extract satellites of interest based on the list of transmitters of interest
+
+    # Arguments
+    transmitters (list): List of transmitters of interest
+    tles (list): List of TLEs for all satellites
 
     # Returns
     List of satellites
