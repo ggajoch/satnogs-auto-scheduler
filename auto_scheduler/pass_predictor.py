@@ -109,8 +109,11 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
         if not tr < ephem.date(tmax):
             break
 
-        # show only if >= configured horizon and
-        # not directly overhead (tr < ts see issue 199)
+        # Store pass only if elevation is higher than configured horizon and satellite
+        # not directly overhead at the moment (tr < ts), see issue
+        # satnogs-network#199 and pyephem#105 for details.
+        # https://gitlab.com/librespacefoundation/satnogs/satnogs-network/-/issues/199
+        # https://github.com/brandon-rhodes/pyephem/issues/105
         if (float(elevation) >= minimum_altitude and tr < ts
                 and pass_duration > timedelta(minutes=min_pass_duration)):
 
