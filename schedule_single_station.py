@@ -233,15 +233,15 @@ def main():
     else:
         stop_azimuth = args.stop_azimuth
 
-    max_observation_duration = args.max_observation_duration
+    max_pass_duration = args.max_observation_duration
     priorities_filename = args.priorities
     only_priority = args.only_priority
     dryrun = args.dryrun
 
     schedule_single_station(ground_station_id, wait_time_seconds, min_priority, tmax, tmin,
                             ground_station, min_culmination, min_riseset, start_azimuth,
-                            stop_azimuth, max_observation_duration, priorities_filename,
-                            only_priority, dryrun)
+                            stop_azimuth, max_pass_duration, priorities_filename, only_priority,
+                            dryrun)
 
 
 def schedule_single_station(ground_station_id,
@@ -254,7 +254,7 @@ def schedule_single_station(ground_station_id,
                             min_riseset,
                             start_azimuth,
                             stop_azimuth,
-                            max_observation_duration,
+                            max_pass_duration,
                             priorities_filename,
                             only_priority,
                             dryrun,
@@ -315,8 +315,8 @@ def schedule_single_station(ground_station_id,
 
             logging.debug(f"Original pass for {satellites_catalog[str(satellite.id)]['name']}"
                           f"is start {satpass['tr']} and end {satpass['ts']}")
-            satpass = constrain_pass_to_max_observation_duration(satpass, max_observation_duration,
-                                                                 tmin, tmax)
+            satpass = constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin,
+                                                                 tmax)
             logging.debug(f"Adjusted max observation duration for {satellite.name} "
                           f"to start {satpass['tr']} and end {satpass['ts']}")
 

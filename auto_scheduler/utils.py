@@ -79,6 +79,6 @@ def print_scheduledpass_summary(scheduledpasses,
                 f"{float(satpass['altt']) if satpass['altt'] else 0.:3.0f} | "
                 f"{satpass.get('priority', 0.0):4.6f} | "
                 f"{satpass['transmitter'].get('uuid', ''):s} | "
-                f"{satpass['transmitter'].get('mode', ''):<10s} | "
+                f"{satpass['transmitter'].get('mode', ''):<11s} | "
                 f"{'Y' if sat_entry['is_frequency_violator'] else 'N':6s} | "
                 f"{sat_entry['name']:s}")
