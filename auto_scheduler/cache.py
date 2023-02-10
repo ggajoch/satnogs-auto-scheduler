@@ -62,10 +62,14 @@ class CacheManager:
 
         if tlast is None or (tnow - tlast).total_seconds() > self.cache_age * 3600:
             return True
-        if not os.path.isfile(self.transmitters_file):
-            return True
-        if not os.path.isfile(self.tles_file):
-            return True
+
+        required_files = [
+            self.transmitters_file, self.tles_file, self.transmitters_stats_file,
+            self.satellites_file
+        ]
+        for filename in required_files:
+            if not os.path.isfile(filename):
+                return True
         return False
 
     def update(self, force=False):
