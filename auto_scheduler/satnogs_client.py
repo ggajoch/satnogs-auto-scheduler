@@ -122,15 +122,21 @@ def get_active_transmitter_info(fmin, fmax):
 
     transmitters_filtered = []
     for entry in transmitters:
-        if entry["downlink_low"]:
-            if entry["status"] == "active" and (fmin < entry["downlink_low"] >=
-                                                fmax) and entry["norad_cat_id"] is not None:
-                transmitter = {
-                    "norad_cat_id": entry["norad_cat_id"],
-                    "uuid": entry["uuid"],
-                    "mode": entry["mode"]
-                }
-                transmitters_filtered.append(transmitter)
+        if not entry["downlink_low"]:
+            continue
+        if not entry["status"] == "active":
+            continue
+        if not fmin < entry["downlink_low"] <= fmax:
+            continue
+        if entry["norad_cat_id"] is None:
+            continue
+
+        transmitter = {
+            "norad_cat_id": entry["norad_cat_id"],
+            "uuid": entry["uuid"],
+            "mode": entry["mode"]
+        }
+        transmitters_filtered.append(transmitter)
 
     return transmitters_filtered
 
