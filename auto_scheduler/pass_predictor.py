@@ -300,9 +300,13 @@ def constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin,
     return satpass
 
 
-def find_constrained_passes(satellite, observer, tmin, tmax, min_culmination, min_pass_duration,
-                            start_azimuth, stop_azimuth, satellites_catalog, max_pass_duration):
-    # pylint: disable=too-many-arguments
+def find_constrained_passes(satellite, observer, constraints):
+    # Un-pack arguments
+    tmin, tmax = constraints['time']
+    min_pass_duration, max_pass_duration = constraints['pass_duration']
+    start_azimuth, stop_azimuth = constraints['azimuth']
+    min_culmination = constraints['min_culmination']
+
     selected_passes = []
     satellite_passes = find_passes(satellite, observer, tmin, tmax, min_culmination,
                                    min_pass_duration)
@@ -319,7 +323,7 @@ def find_constrained_passes(satellite, observer, tmin, tmax, min_culmination, mi
         logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",
                       float(satpass['azr']), float(satpass['azs']))
 
-        logging.debug(f"Original pass for {satellites_catalog[str(satellite.id)]['name']}"
+        logging.debug(f"Original pass for {str(satellite.id)}"
                       f"is start {satpass['tr']} and end {satpass['ts']}")
         satpass = constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin, tmax)
         logging.debug(f"Adjusted max observation duration for {satellite.name} "

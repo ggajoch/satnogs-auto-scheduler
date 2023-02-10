@@ -292,16 +292,17 @@ def schedule_single_station(ground_station_id,
                    satellites))
 
     # Find passes
-    passes = []
+    constraints = {
+        'time': (tmin, tmax),
+        'pass_duration': (settings.MIN_PASS_DURATION, max_pass_duration),
+        'azimuth': (start_azimuth, stop_azimuth),
+        'min_culmination': min_culmination,
+    }
     logging.info(f'Search passes for {len(satellites)} satellites:')
 
-    # Loop over satellites
+    passes = []
     for satellite in tqdm(satellites, disable=None):
-        min_pass_duration = settings.MIN_PASS_DURATION
-        passes.extend(
-            find_constrained_passes(satellite, observer, tmin, tmax, min_culmination,
-                                    min_pass_duration, start_azimuth, stop_azimuth,
-                                    satellites_catalog, max_pass_duration))
+        passes.extend(find_constrained_passes(satellite, observer, constraints))
 
     priorities, favorite_transmitters = read_priorities_transmitters(priorities_filename)
 
