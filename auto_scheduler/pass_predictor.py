@@ -65,8 +65,7 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
         return []
 
     # Loop over passes
-    keep_digging = True
-    while keep_digging:
+    while True:
         try:
             sat_ephem.compute(observer)
         except ValueError as error:
@@ -78,6 +77,7 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
                 print(satellite.tle1.strip())
                 print(satellite.tle2.strip())
             break
+
         try:
             # pylint: disable=invalid-name
             tr, azr, tt, altt, ts, azs = observer.next_pass(sat_ephem)
@@ -105,35 +105,36 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
 
         pass_duration = ts.datetime() - tr.datetime()
 
-        # show only if >= configured horizon and till tmax,
-        # and not directly overhead (tr < ts see issue 199)
+        # Stop search, end of time range reached.
+        if not tr < ephem.date(tmax):
+            break
 
-        if tr < ephem.date(tmax):
-            if (float(elevation) >= minimum_altitude and tr < ts
-                    and pass_duration > timedelta(minutes=min_pass_duration)):
+        # show only if >= configured horizon and
+        # not directly overhead (tr < ts see issue 199)
+        if (float(elevation) >= minimum_altitude and tr < ts
+                and pass_duration > timedelta(minutes=min_pass_duration)):
 
-                # get pass information
-                satpass = {
-                    'tr': tr.datetime(),  # Rise time
-                    'azr': azimuth_r,  # Rise Azimuth
-                    'tt': tt.datetime(),  # Max altitude time
-                    'altt': elevation,  # Max altitude
-                    'ts': ts.datetime(),  # Set time
-                    'td': pass_duration,  # Set duration
-                    'azs': azimuth_s,  # Set azimuth
-                    'transmitter': {
-                        'uuid': satellite.transmitter,
-                        'success_rate': satellite.success_rate,
-                        'good_count': satellite.good_count,
-                        'data_count': satellite.data_count,
-                        'mode': satellite.mode,
-                    },
-                    'scheduled': False
-                }
-                passes.append(satpass)
-            observer.date = ephem.Date(ts).datetime() + timedelta(minutes=1)
-        else:
-            keep_digging = False
+            # get pass information
+            satpass = {
+                'tr': tr.datetime(),  # Rise time
+                'azr': azimuth_r,  # Rise Azimuth
+                'tt': tt.datetime(),  # Max altitude time
+                'altt': elevation,  # Max altitude
+                'ts': ts.datetime(),  # Set time
+                'td': pass_duration,  # Set duration
+                'azs': azimuth_s,  # Set azimuth
+                'transmitter': {
+                    'uuid': satellite.transmitter,
+                    'success_rate': satellite.success_rate,
+                    'good_count': satellite.good_count,
+                    'data_count': satellite.data_count,
+                    'mode': satellite.mode,
+                },
+                'scheduled': False
+            }
+            passes.append(satpass)
+
+        observer.date = ephem.Date(ts).datetime() + timedelta(minutes=1)
 
     return passes
 
