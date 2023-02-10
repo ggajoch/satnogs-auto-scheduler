@@ -1,7 +1,10 @@
+import logging
 import math
 from datetime import timedelta
 
 import ephem
+
+logger = logging.getLogger(__name__)
 
 
 def overlap(satpass, scheduledpasses, wait_time_seconds):
@@ -295,3 +298,52 @@ def constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin,
         satpass['td'] = satpass['ts'] - satpass['tr']
 
     return satpass
+
+
+def find_constrained_passes(satellite, observer, tmin, tmax, min_culmination, min_pass_duration,
+                            start_azimuth, stop_azimuth, satellites_catalog, max_pass_duration):
+    # pylint: disable=too-many-arguments
+    selected_passes = []
+    satellite_passes = find_passes(satellite, observer, tmin, tmax, min_culmination,
+                                   min_pass_duration)
+    for satpass in satellite_passes:
+        # Constrain the passes to be within the allowable viewing window
+        logging.debug("Original pass is azr %f and azs %f", float(satpass['azr']),
+                      float(satpass['azs']))
+        satpass = constrain_pass_to_az_window(satellite, observer, satpass, start_azimuth,
+                                              stop_azimuth, min_pass_duration)
+
+        if not satpass:
+            logging.debug("Pass did not meet azimuth window requirements. Removed.")
+            continue
+        logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",
+                      float(satpass['azr']), float(satpass['azs']))
+
+        logging.debug(f"Original pass for {satellites_catalog[str(satellite.id)]['name']}"
+                      f"is start {satpass['tr']} and end {satpass['ts']}")
+        satpass = constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin, tmax)
+        logging.debug(f"Adjusted max observation duration for {satellite.name} "
+                      f"to start {satpass['tr']} and end {satpass['ts']}")
+
+        # pylint: disable=duplicate-code
+        # NOTE: The transmitter was already added by find_passes initially.
+        #       Why do we set it here again?
+        # Additionally, setting the satellite in find_passes directly would be cleaner.
+        satpass.update({
+            'satellite': {
+                'name': str(satellite.name),
+                'id': str(satellite.id),
+                'tle1': str(satellite.tle1),
+                'tle2': str(satellite.tle2)
+            },
+            'transmitter': {
+                'uuid': satellite.transmitter,
+                'success_rate': satellite.success_rate,
+                'good_count': satellite.good_count,
+                'data_count': satellite.data_count,
+                'mode': satellite.mode
+            },
+            'scheduled': False
+        })
+        selected_passes.append(satpass)
+    return selected_passes

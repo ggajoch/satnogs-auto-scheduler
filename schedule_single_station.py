@@ -16,8 +16,7 @@ from auto_scheduler import __version__ as auto_scheduler_version
 from auto_scheduler import settings
 from auto_scheduler.cache import CacheManager
 from auto_scheduler.io import read_priorities_transmitters, read_transmitters_stats
-from auto_scheduler.pass_predictor import constrain_pass_to_az_window, \
-    constrain_pass_to_max_observation_duration, create_observer, find_passes
+from auto_scheduler.pass_predictor import create_observer, find_constrained_passes
 from auto_scheduler.satnogs_client import APIRequestError, check_station_availability, \
     get_groundstation_info, get_scheduled_passes_from_network, schedule_observations_batch
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
@@ -298,49 +297,11 @@ def schedule_single_station(ground_station_id,
 
     # Loop over satellites
     for satellite in tqdm(satellites, disable=None):
-        satellite_passes = find_passes(satellite, observer, tmin, tmax, min_culmination,
-                                       settings.MIN_PASS_DURATION)
-        for satpass in satellite_passes:
-            # Constrain the passes to be within the allowable viewing window
-            logging.debug("Original pass is azr %f and azs %f", float(satpass['azr']),
-                          float(satpass['azs']))
-            satpass = constrain_pass_to_az_window(satellite, observer, satpass, start_azimuth,
-                                                  stop_azimuth, settings.MIN_PASS_DURATION)
-
-            if not satpass:
-                logging.debug("Pass did not meet azimuth window requirements. Removed.")
-                continue
-            logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",
-                          float(satpass['azr']), float(satpass['azs']))
-
-            logging.debug(f"Original pass for {satellites_catalog[str(satellite.id)]['name']}"
-                          f"is start {satpass['tr']} and end {satpass['ts']}")
-            satpass = constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin,
-                                                                 tmax)
-            logging.debug(f"Adjusted max observation duration for {satellite.name} "
-                          f"to start {satpass['tr']} and end {satpass['ts']}")
-
-            # pylint: disable=duplicate-code
-            # NOTE: The transmitter was already added by find_passes initially.
-            #       Why do we set it here again?
-            # Additionally, setting the satellite in find_passes directly would be cleaner.
-            satpass.update({
-                'satellite': {
-                    'name': str(satellite.name),
-                    'id': str(satellite.id),
-                    'tle1': str(satellite.tle1),
-                    'tle2': str(satellite.tle2)
-                },
-                'transmitter': {
-                    'uuid': satellite.transmitter,
-                    'success_rate': satellite.success_rate,
-                    'good_count': satellite.good_count,
-                    'data_count': satellite.data_count,
-                    'mode': satellite.mode
-                },
-                'scheduled': False
-            })
-            passes.append(satpass)
+        min_pass_duration = settings.MIN_PASS_DURATION
+        passes.extend(
+            find_constrained_passes(satellite, observer, tmin, tmax, min_culmination,
+                                    min_pass_duration, start_azimuth, stop_azimuth,
+                                    satellites_catalog, max_pass_duration))
 
     priorities, favorite_transmitters = read_priorities_transmitters(priorities_filename)
 
