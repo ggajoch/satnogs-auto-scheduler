@@ -179,9 +179,13 @@ def main():
     tmax = tnow + timedelta(hours=length_hours)
 
     # Get ground station information
-    ground_station = get_groundstation_info(ground_station_id)
-    if not ground_station or not check_station_availability(ground_station, args.allow_testing):
-        sys.exit()
+    try:
+        ground_station = get_groundstation_info(ground_station_id)
+    except APIRequestError:
+        sys.exit(1)
+
+    if not check_station_availability(ground_station, args.allow_testing):
+        sys.exit(1)
 
     # Set minimum culmination elevation
     if args.min_culmination is None:
