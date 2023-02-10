@@ -267,7 +267,7 @@ def extract_scheduling_error(err):
             0][:38] == 'No permission to schedule observations':
         reason = 'permission error'
     else:
-        reason = 'reason provided by the server: {err}'
+        reason = f'reason provided by the server: {err}'
     return reason
 
 
