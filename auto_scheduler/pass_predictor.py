@@ -52,6 +52,20 @@ def create_observer(lat, lon, alt, min_riseset=0.0):
 
 
 def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_duration):
+    """
+    Find passes of one satellite over a specified ground station during the selected time period.
+
+    # Arguments
+    satellite (auto_scheduler.Satellite): The satellite
+    observer (ephem.Observer): The observer
+    tmin (datetime.datetime): Filter start datetime
+    tmax (datetime.datetime): Filter end datetime
+    minimum_altitude (float): Minimum culmination height in degrees above the horizon
+    min_pass_duration (float): Minimum pass duration in minutes
+
+    # Returns
+    List of sallite passes
+    """
     # pylint: disable=too-many-arguments,broad-exception-caught,too-many-locals
     passes = []
 
@@ -72,10 +86,10 @@ def find_passes(satellite, observer, tmin, tmax, minimum_altitude, min_pass_dura
             if str(error).startswith("TLE elements are valid for a few weeks around their epoch"):
                 # pylint: disable=protected-access
                 age = observer.date.datetime() - sat_ephem._epoch.datetime()
-                print(f"ERROR: TLE too old: {age}")
-                print(satellite.tle0.strip())
-                print(satellite.tle1.strip())
-                print(satellite.tle2.strip())
+                print(f"WARNING: Skip satellite {satellite.id}, TLE too old "
+                      f"for predictions: {age.days} days.")
+            else:
+                print(f"WARNING: Skip satellite {satellite.id} due to a propagation error.")
             break
 
         try:

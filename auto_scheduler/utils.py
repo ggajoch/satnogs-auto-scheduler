@@ -37,6 +37,12 @@ def get_priority_passes(passes, priorities, favorite_transmitters, only_priority
 def satellites_from_transmitters(transmitters, tles):
     '''
     Extract interesting satellites from receivable transmitters
+
+    # Returns
+    List of satellites
+
+    # Return type
+    list(auto_scheduler.Satelllite)
     '''
     satellites = []
     for transmitter in transmitters:
