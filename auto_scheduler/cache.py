@@ -23,7 +23,7 @@ class CacheManager:
     # pylint: disable=too-many-instance-attributes
     transmitters_stats = None
     transmitters_receivable = None
-    alive_norad_cat_ids = None
+    norad_cat_ids_alive = None
     norad_cat_ids_of_interest = None
 
     def __init__(self, ground_station_id, ground_station_antennas, cache_dir, cache_age,
@@ -113,7 +113,7 @@ class CacheManager:
         """
         try:
             logger.info('Download satellite information from SatNOGS DB...')
-            self.alive_norad_cat_ids, satellites_catalog = get_satellite_info()
+            self.norad_cat_ids_alive, satellites_catalog = get_satellite_info()
         except APIRequestError:
             logger.error('Download from SatNOGS DB failed.')
             sys.exit(1)
@@ -155,7 +155,7 @@ class CacheManager:
             set(transmitter["norad_cat_id"]
                 for transmitter in self.transmitters_receivable.values()
                 if transmitter["norad_cat_id"] < self.max_norad_cat_id
-                and transmitter["norad_cat_id"] in self.alive_norad_cat_ids))
+                and transmitter["norad_cat_id"] in self.norad_cat_ids_alive))
 
         # Store transmitters
         with open(self.transmitters_file, "w") as fp_transmitters:
@@ -167,7 +167,7 @@ class CacheManager:
 
                 # Skip dead satellites
                 if self.transmitters_receivable[uuid][
-                        "norad_cat_id"] not in self.alive_norad_cat_ids:
+                        "norad_cat_id"] not in self.norad_cat_ids_alive:
                     continue
 
                 # pylint: disable=consider-using-f-string
