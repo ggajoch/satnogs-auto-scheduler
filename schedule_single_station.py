@@ -15,7 +15,7 @@ from tqdm import tqdm
 from auto_scheduler import __version__ as auto_scheduler_version
 from auto_scheduler import settings
 from auto_scheduler.cache import CacheManager
-from auto_scheduler.io import read_priorities_transmitters, read_transmitters_stats
+from auto_scheduler.io import read_priorities_transmitters, read_transmitters_of_interest
 from auto_scheduler.pass_predictor import create_observer, find_constrained_passes
 from auto_scheduler.satnogs_client import APIRequestError, check_station_availability, \
     get_groundstation_info, get_scheduled_passes_from_network, schedule_observations_batch
@@ -278,10 +278,10 @@ def schedule_single_station(ground_station_id,
         filter(lambda entry: entry['norad_cat_id'] in cache.norad_cat_ids_of_interest, tles_all))
 
     # Read transmitters
-    transmitters_stats = read_transmitters_stats(cache.transmitters_file)
+    transmitters_of_interest = read_transmitters_of_interest(cache.transmitters_file)
 
     # Extract interesting satellites from receivable transmitters
-    satellites = satellites_from_transmitters(transmitters_stats, tles)
+    satellites = satellites_from_transmitters(transmitters_of_interest, tles)
 
     # Skip satellites with frequency misuse (avoids scheduling permission errors)
     if skip_frequency_violators:

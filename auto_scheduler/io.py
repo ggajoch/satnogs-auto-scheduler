@@ -5,9 +5,11 @@ import os
 logger = logging.getLogger(__name__)
 
 
-def read_transmitters_stats(filename):
+def read_transmitters_of_interest(filename):
     """
-    Read transmitter statistics from file
+    Read transmitter of interest from file.
+    Additionally to the list of transmitters receivable by the station
+    this file contains transmitter statistics too.
 
     # Return type
     list(dict)

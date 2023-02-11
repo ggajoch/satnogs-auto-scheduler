@@ -5,7 +5,7 @@ import sys
 
 from auto_scheduler import settings
 from auto_scheduler.cache import CacheManager
-from auto_scheduler.io import read_tles, read_transmitters_stats
+from auto_scheduler.io import read_tles, read_transmitters_of_interest
 from auto_scheduler.satnogs_client import get_groundstation_info
 from auto_scheduler.utils import satellites_from_transmitters
 
@@ -63,7 +63,7 @@ def main(station_id, constrains_file, priorities_file):
     tles = list(read_tles(cache.tles_file))
 
     # Read transmitters
-    transmitters = read_transmitters_stats(cache.transmitters_file)
+    transmitters = read_transmitters_of_interest(cache.transmitters_file)
 
     # Extract interesting satellites from receivable transmitters
     satellites = satellites_from_transmitters(transmitters, tles)

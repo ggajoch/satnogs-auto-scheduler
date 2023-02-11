@@ -3,7 +3,7 @@ Unit tests for the pass predictor
 """
 import tomli
 
-from auto_scheduler.io import read_tles, read_transmitters_stats
+from auto_scheduler.io import read_tles, read_transmitters_of_interest
 from auto_scheduler.pass_predictor import create_observer, find_passes
 from auto_scheduler.utils import satellites_from_transmitters
 
@@ -43,7 +43,7 @@ def test_find_passes():
         test_case = tomli.load(test_case_file)
 
     tles = list(read_tles(test_case['files']['tles_filename']))
-    transmitters = list(read_transmitters_stats(test_case['files']['transmitters_filename']))
+    transmitters = list(read_transmitters_of_interest(test_case['files']['transmitters_filename']))
 
     # Extract interesting satellites from receivable transmitters
     satellites = satellites_from_transmitters(transmitters, tles)
