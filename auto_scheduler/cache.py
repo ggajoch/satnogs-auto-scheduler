@@ -22,6 +22,7 @@ class CacheManager:
     """
     # pylint: disable=too-many-instance-attributes
     transmitters_stats = None
+    transmitters_receivable = None
     alive_norad_cat_ids = None
     norad_cat_ids_of_interest = None
 
@@ -118,27 +119,36 @@ class CacheManager:
         with open(self.satellites_file, "w") as fp_satellites:
             json.dump(satellites_catalog, fp_satellites, indent=2)
 
+    def fetch_transmitters_receivable(self):
+        """
+        Get active transmitters in frequency range of each antenna
+        """
+        self.transmitters_receivable = {}
+
+        for antenna in self.ground_station_antennas:
+            logging.info('Download list of active transmitters between '
+                         f'{antenna["frequency"] * 1e-6:.0f} and '
+                         f'{antenna["frequency_max"] * 1e-6:.0f} MHz from SatNOGS DB...')
+
+            try:
+                transmitters = get_active_transmitter_info(antenna["frequency"],
+                                                           antenna["frequency_max"])
+            except APIRequestError:
+                logging.error("Download from SatNOGS DB failed.")
+                sys.exit(1)
+
+            for transmitter in transmitters:
+                self.transmitters_receivable[transmitter['uuid']] = transmitter
+
     def update_transmitters(self):
         self.fetch_satellites()
         self.fetch_transmitters_stats()
-
-        # Get active transmitters in frequency range of each antenna
-        try:
-            transmitters = {}
-            for antenna in self.ground_station_antennas:
-                logging.info('Download list of active transmitters between '
-                             f'{antenna["frequency"] * 1e-6:.0f} and '
-                             f'{antenna["frequency_max"] * 1e-6:.0f} MHz from SatNOGS DB...')
-                for transmitter in get_active_transmitter_info(antenna["frequency"],
-                                                               antenna["frequency_max"]):
-                    transmitters[transmitter['uuid']] = transmitter
-        except APIRequestError:
-            logging.error("Download from SatNOGS DB failed.")
-            sys.exit(1)
+        self.fetch_transmitters_receivable()
 
         # Extract NORAD IDs from transmitters
         self.norad_cat_ids_of_interest = sorted(
-            set(transmitter["norad_cat_id"] for transmitter in transmitters.values()
+            set(transmitter["norad_cat_id"]
+                for transmitter in self.transmitters_receivable.values()
                 if transmitter["norad_cat_id"] < self.max_norad_cat_id
                 and transmitter["norad_cat_id"] in self.alive_norad_cat_ids))
 
@@ -147,18 +157,20 @@ class CacheManager:
             logging.info("Filter transmitters based on ground station capability.")
             for uuid, stats in self.transmitters_stats.items():
                 # Skip transmitters which do not have statistics in SatNOGS Network (yet)
-                if uuid not in transmitters:
+                if uuid not in self.transmitters_receivable:
                     continue
 
                 # Skip dead satellites
-                if transmitters[uuid]["norad_cat_id"] not in self.alive_norad_cat_ids:
+                if self.transmitters_receivable[uuid][
+                        "norad_cat_id"] not in self.alive_norad_cat_ids:
                     continue
 
                 # pylint: disable=consider-using-f-string
                 fp_transmitters.write(
                     "%05d %s %d %d %d %s\n" %
-                    (transmitters[uuid]["norad_cat_id"], uuid, stats["success_rate"],
-                     stats["good_count"], stats["total_count"], transmitters[uuid]["mode"]))
+                    (self.transmitters_receivable[uuid]["norad_cat_id"], uuid,
+                     stats["success_rate"], stats["good_count"], stats["total_count"],
+                     self.transmitters_receivable[uuid]["mode"]))
 
     def update_tles(self, norad_cat_ids):
         """
