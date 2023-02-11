@@ -29,6 +29,21 @@ class Satellite:
         self.mode = transmitter['mode']
 
     def __repr__(self):
-        # pylint: disable=consider-using-f-string
-        return "%s %s %d %d %d %s %s" % (self.id, self.transmitter, self.success_rate,
-                                         self.good_count, self.data_count, self.mode, self.name)
+        """
+        Return the string representation of this satellite.
+
+        Valid Python expression that could be used to recreate the object.
+        """
+        return f'auto_scheduler.Satellite(' \
+            'tle={' \
+            f'"tle0": "{self.tle0.strip()}",' \
+            f'"tle1": "{self.tle1.strip()}",' \
+            f'"tle2": "{self.tle2.strip()}",' \
+            f'"norad_cat_id": "{self.id}"' \
+            '}, transmitter={' \
+            f'"uuid": "{self.transmitter}",' \
+            f'"success_rate": "{self.success_rate}",' \
+            f'"good_count": "{self.good_count}",' \
+            f'"data_count": "{self.data_count}",' \
+            f'"mode": "{self.mode}"' \
+            '})'
