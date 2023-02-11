@@ -86,6 +86,7 @@ class CacheManager:
         - satellites_by_norad_id
         - norad_cat_ids_alive
         - transmitters_stats
+        - transmitters_receivable
         """
         # if not force and not self.update_needed():
         #     # Cache is valid, skip the update
@@ -97,6 +98,7 @@ class CacheManager:
         if force or self.update_needed():
             self.fetch_satellites()
             self.fetch_transmitters_stats()
+            self.fetch_transmitters_receivable()
         else:
             with open(self.satellites_file) as fp_satellites:
                 self.satellites_by_norad_id = json.load(fp_satellites)
@@ -106,7 +108,9 @@ class CacheManager:
             with open(self.transmitters_stats_file) as fp_transmitters_stats:
                 self.transmitters_stats = json.load(fp_transmitters_stats)
 
-        self.fetch_transmitters_receivable()
+            with open(self.transmitters2_file) as fp_transmitters2:
+                self.transmitters_receivable = json.load(fp_transmitters2)
+
         self.update_transmitters()
         self.fetch_tles()
 
