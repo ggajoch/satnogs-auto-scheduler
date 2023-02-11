@@ -77,9 +77,10 @@ class CacheManager:
         return False
 
     def update(self, force=False):
-        if not force and not self.update_needed():
-            # Cache is valid, skip the update
-            return
+        del force
+        # if not force and not self.update_needed():
+        #     # Cache is valid, skip the update
+        #     return
 
         logging.info('Update satellites, transmitters, transmitter statistics and TLEs:')
         tnow = datetime.now()
