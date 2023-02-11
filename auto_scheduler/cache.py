@@ -85,6 +85,7 @@ class CacheManager:
         Once this method was called, the following instance attributes are available:
         - satellites_by_norad_id
         - norad_cat_ids_alive
+        - transmitters_stats
         """
         # if not force and not self.update_needed():
         #     # Cache is valid, skip the update
@@ -95,12 +96,16 @@ class CacheManager:
 
         if force or self.update_needed():
             self.fetch_satellites()
+            self.fetch_transmitters_stats()
         else:
             with open(self.satellites_file) as fp_satellites:
                 self.satellites_by_norad_id = json.load(fp_satellites)
+
             self.norad_cat_ids_alive = self.satellites_by_norad_id.keys()
 
-        self.fetch_transmitters_stats()
+            with open(self.transmitters_stats_file) as fp_transmitters_stats:
+                self.transmitters_stats = json.load(fp_transmitters_stats)
+
         self.fetch_transmitters_receivable()
         self.update_transmitters()
         self.fetch_tles()
