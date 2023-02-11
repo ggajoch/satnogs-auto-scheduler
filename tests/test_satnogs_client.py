@@ -26,12 +26,10 @@ def test_get_satellite_info():
     """
     Unit test for get_satellite_info
     """
-    norad_cat_ids_alive, satellites_catalog = get_satellite_info()
+    satellites_list = get_satellite_info()
 
-    assert isinstance(norad_cat_ids_alive, list)
-    assert isinstance(satellites_catalog, dict)
-    assert norad_cat_ids_alive[0] in satellites_catalog
-    assert 'norad_cat_id' in satellites_catalog[norad_cat_ids_alive[0]]
+    assert isinstance(satellites_list, list)
+    assert 'norad_cat_id' in satellites_list[0]
 
 
 def test_get_active_transmitter_info():

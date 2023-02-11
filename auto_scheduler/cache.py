@@ -108,18 +108,36 @@ class CacheManager:
 
     def fetch_satellites(self):
         """
-        Download the catalog of satellites from SatNOGS DB,
-        extract which satellites are alive.
+        Download the catalog of satellites from SatNOGS DB.
+
+        Store the data in this format:
+        - Filtered by satellites which have a norad id and are alive,
+          indexed by norad id
         """
         try:
             logger.info('Download satellite information from SatNOGS DB...')
-            self.norad_cat_ids_alive, satellites_catalog = get_satellite_info()
+            satellites_list = get_satellite_info()
         except APIRequestError:
             logger.error('Download from SatNOGS DB failed.')
             sys.exit(1)
 
+        satellites_by_norad_id = {}
+        norad_cat_ids_alive = []
+
+        for satellite in satellites_list:
+            # Search satellites which have a norad_cat_id and are alive, indexed by norad id
+            if satellite['norad_cat_id'] is None:
+                continue
+            if not satellite["status"] == "alive":
+                continue
+
+            norad_cat_ids_alive.append(satellite["norad_cat_id"])
+            satellites_by_norad_id[satellite["norad_cat_id"]] = satellite
+
         with open(self.satellites_file, "w") as fp_satellites:
-            json.dump(satellites_catalog, fp_satellites, indent=2)
+            json.dump(satellites_by_norad_id, fp_satellites, indent=2)
+
+        self.norad_cat_ids_alive = norad_cat_ids_alive
 
     def fetch_transmitters_receivable(self):
         """
