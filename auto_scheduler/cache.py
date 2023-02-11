@@ -84,6 +84,9 @@ class CacheManager:
         logging.info('Update satellites, transmitters, transmitter statistics and TLEs:')
         tnow = datetime.now()
 
+        self.fetch_satellites()
+        self.fetch_transmitters_stats()
+        self.fetch_transmitters_receivable()
         self.update_transmitters()
         self.fetch_tles()
 
@@ -182,10 +185,6 @@ class CacheManager:
             json.dump(self.transmitters_receivable, fp_transmitters2, indent=2)
 
     def update_transmitters(self):
-        self.fetch_satellites()
-        self.fetch_transmitters_stats()
-        self.fetch_transmitters_receivable()
-
         # Extract NORAD IDs from transmitters
         self.norad_cat_ids_of_interest = sorted(
             set(transmitter["norad_cat_id"]
