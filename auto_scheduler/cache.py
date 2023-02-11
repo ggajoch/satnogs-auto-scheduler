@@ -37,6 +37,8 @@ class CacheManager:
 
         self.transmitters_file = os.path.join(self.cache_dir,
                                               f"transmitters_{self.ground_station_id}.txt")
+        self.transmitters2_file = os.path.join(self.cache_dir,
+                                               f"transmitters_{self.ground_station_id}.json")
         self.tles_file = os.path.join(self.cache_dir, f"tles_{self.ground_station_id}.json")
         self.last_update_file = os.path.join(self.cache_dir, f"last_update_{ground_station_id}.txt")
 
@@ -139,6 +141,9 @@ class CacheManager:
 
             for transmitter in transmitters:
                 self.transmitters_receivable[transmitter['uuid']] = transmitter
+
+        with open(self.transmitters2_file, "w") as fp_transmitters2:
+            json.dump(self.transmitters_receivable, fp_transmitters2, indent=2)
 
     def update_transmitters(self):
         self.fetch_satellites()
