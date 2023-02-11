@@ -265,15 +265,13 @@ def schedule_single_station(ground_station_id,
                          settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
     cache.update()
 
-    # Set observer
-    observer = create_observer(ground_station['lat'],
-                               ground_station['lng'],
-                               ground_station['altitude'],
-                               min_riseset=min_riseset)
-
     # Read tles
     with open(cache.tles_file) as fp_tles:
         tles_all = json.load(fp_tles)
+
+    # Read satellites
+    with open(cache.satellites_file) as fp_satellites:
+        satellites_catalog = json.load(fp_satellites)
 
     # Filter TLEs for objects of interest only
     tles = list(
@@ -281,10 +279,6 @@ def schedule_single_station(ground_station_id,
 
     # Read transmitters
     transmitters_stats = read_transmitters_stats(cache.transmitters_file)
-
-    # Read satellites
-    with open(cache.satellites_file) as fp_satellites:
-        satellites_catalog = json.load(fp_satellites)
 
     # Extract interesting satellites from receivable transmitters
     satellites = satellites_from_transmitters(transmitters_stats, tles)
@@ -304,6 +298,11 @@ def schedule_single_station(ground_station_id,
     }
     logging.info(f'Search passes for {len(satellites)} satellites:')
 
+    # Set observer
+    observer = create_observer(ground_station['lat'],
+                               ground_station['lng'],
+                               ground_station['altitude'],
+                               min_riseset=min_riseset)
     passes = []
     for satellite in tqdm(satellites, disable=None):
         passes.extend(find_constrained_passes(satellite, observer, constraints))
