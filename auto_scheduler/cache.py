@@ -91,10 +91,14 @@ class CacheManager:
         logging.info(
             "Download transmitter statistics from SatNOGS Network (this may take some minutes)...")
         try:
-            self.transmitters_stats = get_transmitter_stats()
+            transmitters_stats_list = get_transmitter_stats()
         except APIRequestError:
             logging.error('Download from SatNOGS Network failed.')
             sys.exit(1)
+
+        self.transmitters_stats = {}
+        for transmitter in transmitters_stats_list:
+            self.transmitters_stats[transmitter['uuid']] = transmitter['stats']
 
         with open(self.transmitters_stats_file, "w") as fp_transmitters_stats:
             json.dump(self.transmitters_stats, fp_transmitters_stats, indent=2)
@@ -141,11 +145,11 @@ class CacheManager:
         # Store transmitters
         with open(self.transmitters_file, "w") as fp_transmitters:
             logging.info("Filter transmitters based on ground station capability.")
-            for transmitter in self.transmitters_stats:
-                uuid = transmitter["uuid"]
-                # Skip absent transmitters
+            for uuid, stats in self.transmitters_stats.items():
+                # Skip transmitters which do not have statistics in SatNOGS Network (yet)
                 if uuid not in transmitters:
                     continue
+
                 # Skip dead satellites
                 if transmitters[uuid]["norad_cat_id"] not in self.alive_norad_cat_ids:
                     continue
@@ -153,9 +157,8 @@ class CacheManager:
                 # pylint: disable=consider-using-f-string
                 fp_transmitters.write(
                     "%05d %s %d %d %d %s\n" %
-                    (transmitters[uuid]["norad_cat_id"], uuid, transmitter["stats"]["success_rate"],
-                     transmitter["stats"]["good_count"], transmitter["stats"]["total_count"],
-                     transmitters[uuid]["mode"]))
+                    (transmitters[uuid]["norad_cat_id"], uuid, stats["success_rate"],
+                     stats["good_count"], stats["total_count"], transmitters[uuid]["mode"]))
 
     def update_tles(self, norad_cat_ids):
         """
