@@ -269,10 +269,6 @@ def schedule_single_station(ground_station_id,
     with open(cache.tles_file) as fp_tles:
         tles_all = json.load(fp_tles)
 
-    # Read satellites
-    with open(cache.satellites_file) as fp_satellites:
-        satellites_catalog = json.load(fp_satellites)
-
     # Filter TLEs for objects of interest only
     tles = list(
         filter(lambda entry: entry['norad_cat_id'] in cache.norad_cat_ids_of_interest, tles_all))
@@ -286,8 +282,9 @@ def schedule_single_station(ground_station_id,
     # Skip satellites with frequency misuse (avoids scheduling permission errors)
     if skip_frequency_violators:
         satellites = list(
-            filter(lambda sat: not satellites_catalog[str(sat.id)]['is_frequency_violator'],
-                   satellites))
+            filter(
+                lambda sat: not cache.satellites_by_norad_id[str(sat.id)]['is_frequency_violator'],
+                satellites))
 
     # Find passes
     constraints = {
@@ -339,7 +336,7 @@ def schedule_single_station(ground_station_id,
 
     print_scheduledpass_summary(scheduledpasses,
                                 ground_station_id,
-                                satellites_catalog,
+                                cache.satellites_by_norad_id,
                                 printer=logging.info)
 
     # Login and schedule passes

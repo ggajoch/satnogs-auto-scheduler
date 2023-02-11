@@ -25,6 +25,7 @@ class CacheManager:
     transmitters_receivable = None
     norad_cat_ids_alive = None
     norad_cat_ids_of_interest = None
+    satellites_by_norad_id = None
 
     def __init__(self, ground_station_id, ground_station_antennas, cache_dir, cache_age,
                  max_norad_cat_id):
@@ -77,7 +78,14 @@ class CacheManager:
         return False
 
     def update(self, force=False):
-        del force
+        """
+        Update the Cache if necessary (or forced) and provide the downloaded or already cached
+        data via instance attributes.
+
+        Once this method was called, the following instance attributes are available:
+        - satellites_by_norad_id
+        - norad_cat_ids_alive
+        """
         # if not force and not self.update_needed():
         #     # Cache is valid, skip the update
         #     return
@@ -85,7 +93,13 @@ class CacheManager:
         logging.info('Update satellites, transmitters, transmitter statistics and TLEs:')
         tnow = datetime.now()
 
-        self.fetch_satellites()
+        if force or self.update_needed():
+            self.fetch_satellites()
+        else:
+            with open(self.satellites_file) as fp_satellites:
+                self.satellites_by_norad_id = json.load(fp_satellites)
+            self.norad_cat_ids_alive = self.satellites_by_norad_id.keys()
+
         self.fetch_transmitters_stats()
         self.fetch_transmitters_receivable()
         self.update_transmitters()
@@ -160,6 +174,7 @@ class CacheManager:
             json.dump(satellites_by_norad_id, fp_satellites, indent=2)
 
         self.norad_cat_ids_alive = norad_cat_ids_alive
+        self.satellites_by_norad_id = satellites_by_norad_id
 
     def fetch_transmitters_receivable(self):
         """
