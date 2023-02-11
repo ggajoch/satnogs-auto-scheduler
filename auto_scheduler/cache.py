@@ -44,6 +44,7 @@ class CacheManager:
         self.tles_file = os.path.join(self.cache_dir, "tles.json")
         self.transmitters_stats_file = os.path.join(self.cache_dir, "transmitters_stats.json")
         self.satellites_file = os.path.join(self.cache_dir, "satellites.json")
+        self.satellites2_file = os.path.join(self.cache_dir, "satellites2.json")
 
         # Create cache
         if not os.path.isdir(self.cache_dir):
@@ -110,9 +111,11 @@ class CacheManager:
         """
         Download the catalog of satellites from SatNOGS DB.
 
-        Store the data in this format:
+        Store the data in two formats:
         - Filtered by satellites which have a norad id and are alive,
-          indexed by norad id
+          indexed by norad id (DEPRECATED)
+        - All satellites, indexed by sat id (SatNOGS Satellite ID) plus
+          the mapping between norad id and sat id
         """
         try:
             logger.info('Download satellite information from SatNOGS DB...')
@@ -121,10 +124,21 @@ class CacheManager:
             logger.error('Download from SatNOGS DB failed.')
             sys.exit(1)
 
+        satellites_by_sat_id = {}
         satellites_by_norad_id = {}
+        norad_to_sat_id = {}
         norad_cat_ids_alive = []
 
         for satellite in satellites_list:
+            if satellite['norad_cat_id'] in norad_to_sat_id:
+                print('WARNING: Duplicated NORAD ID found! '
+                      f'{satellite["sat_id"]}  vs '
+                      f'{satellites_by_sat_id[norad_to_sat_id[satellite["norad_cat_id"]]]}')
+                continue
+            satellites_by_sat_id[satellite['sat_id']] = satellite
+            norad_to_sat_id[satellite['norad_cat_id']] = satellite['sat_id']
+
+            # DEPRECATED:
             # Search satellites which have a norad_cat_id and are alive, indexed by norad id
             if satellite['norad_cat_id'] is None:
                 continue
@@ -133,6 +147,10 @@ class CacheManager:
 
             norad_cat_ids_alive.append(satellite["norad_cat_id"])
             satellites_by_norad_id[satellite["norad_cat_id"]] = satellite
+
+        data = {'satellites': satellites_by_sat_id, 'norad_to_sat_id': norad_to_sat_id}
+        with open(self.satellites2_file, "w") as fp_satellites:
+            json.dump(data, fp_satellites, indent=2)
 
         with open(self.satellites_file, "w") as fp_satellites:
             json.dump(satellites_by_norad_id, fp_satellites, indent=2)
