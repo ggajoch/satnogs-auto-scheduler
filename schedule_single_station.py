@@ -273,7 +273,11 @@ def schedule_single_station(ground_station_id,
 
     # Read tles
     with open(cache.tles_file) as fp_tles:
-        tles = json.load(fp_tles)
+        tles_all = json.load(fp_tles)
+
+    # Filter TLEs for objects of interest only
+    tles = list(
+        filter(lambda entry: entry['norad_cat_id'] in cache.norad_cat_ids_of_interest, tles_all))
 
     # Read transmitters
     transmitters_stats = read_transmitters_stats(cache.transmitters_file)

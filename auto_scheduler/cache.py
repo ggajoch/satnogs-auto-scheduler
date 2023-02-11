@@ -39,9 +39,9 @@ class CacheManager:
                                               f"transmitters_{self.ground_station_id}.txt")
         self.transmitters2_file = os.path.join(self.cache_dir,
                                                f"transmitters_{self.ground_station_id}.json")
-        self.tles_file = os.path.join(self.cache_dir, f"tles_{self.ground_station_id}.json")
         self.last_update_file = os.path.join(self.cache_dir, f"last_update_{ground_station_id}.txt")
 
+        self.tles_file = os.path.join(self.cache_dir, "tles.json")
         self.transmitters_stats_file = os.path.join(self.cache_dir, "transmitters_stats.json")
         self.satellites_file = os.path.join(self.cache_dir, "satellites.json")
 
@@ -84,7 +84,7 @@ class CacheManager:
         tnow = datetime.now()
 
         self.update_transmitters()
-        self.update_tles(self.norad_cat_ids_of_interest)
+        self.fetch_tles()
 
         # Store current time
         with open(self.last_update_file, "w") as fp_last_update:
@@ -177,7 +177,7 @@ class CacheManager:
                      stats["success_rate"], stats["good_count"], stats["total_count"],
                      self.transmitters_receivable[uuid]["mode"]))
 
-    def update_tles(self, norad_cat_ids):
+    def fetch_tles(self):
         """
         Download TLEs from SatNOGS DB.
         Requires a SatNOGS DB API Token!
@@ -198,13 +198,10 @@ class CacheManager:
         # Method 1: Use authenticated SatNOGS DB access
         logging.info('Download TLEs from SatNOGS DB...')
         try:
-            tle_data = get_tles()
+            tles = get_tles()
         except APIRequestError:
             logging.error('Download from SatNOGS DB failed.')
             sys.exit(1)
-
-        # Filter objects of interest only
-        tles = list(filter(lambda entry: entry['norad_cat_id'] in norad_cat_ids, tle_data))
 
         with open(self.tles_file, "w") as fp_tles:
             json.dump(tles, fp_tles, indent=2)
