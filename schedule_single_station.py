@@ -5,7 +5,6 @@
 from __future__ import division
 
 import argparse
-import json
 import logging
 import sys
 from datetime import datetime, timedelta
@@ -265,13 +264,10 @@ def schedule_single_station(ground_station_id,
                          settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
     cache.update()
 
-    # Read tles
-    with open(cache.tles_file) as fp_tles:
-        tles_all = json.load(fp_tles)
-
     # Filter TLEs for objects of interest only
     tles = list(
-        filter(lambda entry: entry['norad_cat_id'] in cache.norad_cat_ids_of_interest, tles_all))
+        filter(lambda entry: entry['norad_cat_id'] in cache.norad_cat_ids_of_interest,
+               cache.tles_all))
 
     # Read transmitters
     transmitters_of_interest = read_transmitters_of_interest(cache.transmitters_file)

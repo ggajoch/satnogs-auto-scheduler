@@ -26,6 +26,7 @@ class CacheManager:
     norad_cat_ids_alive = None
     norad_cat_ids_of_interest = None
     satellites_by_norad_id = None
+    tles_all = None
 
     def __init__(self, ground_station_id, ground_station_antennas, cache_dir, cache_age,
                  max_norad_cat_id):
@@ -87,6 +88,7 @@ class CacheManager:
         - norad_cat_ids_alive
         - transmitters_stats
         - transmitters_receivable
+        - tles_all
         """
         # if not force and not self.update_needed():
         #     # Cache is valid, skip the update
@@ -99,6 +101,7 @@ class CacheManager:
             self.fetch_satellites()
             self.fetch_transmitters_stats()
             self.fetch_transmitters_receivable()
+            self.fetch_tles()
         else:
             with open(self.satellites_file) as fp_satellites:
                 self.satellites_by_norad_id = json.load(fp_satellites)
@@ -111,8 +114,11 @@ class CacheManager:
             with open(self.transmitters2_file) as fp_transmitters2:
                 self.transmitters_receivable = json.load(fp_transmitters2)
 
+            # Read tles
+            with open(self.tles_file) as fp_tles:
+                self.tles_all = json.load(fp_tles)
+
         self.update_transmitters()
-        self.fetch_tles()
 
         # Store current time
         with open(self.last_update_file, "w") as fp_last_update:
@@ -258,10 +264,10 @@ class CacheManager:
         # Method 1: Use authenticated SatNOGS DB access
         logging.info('Download TLEs from SatNOGS DB...')
         try:
-            tles = get_tles()
+            self.tles_all = get_tles()
         except APIRequestError:
             logging.error('Download from SatNOGS DB failed.')
             sys.exit(1)
 
         with open(self.tles_file, "w") as fp_tles:
-            json.dump(tles, fp_tles, indent=2)
+            json.dump(self.tles_all, fp_tles, indent=2)
