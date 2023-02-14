@@ -47,3 +47,15 @@ class Satellite:
             f'"data_count": "{self.data_count}",' \
             f'"mode": "{self.mode}"' \
             '})'
+
+    def __eq__(self, other):
+        """
+        Check if two Satellites are equal.
+        """
+        for attribute_name in [
+                'tle0', 'tle1', 'tle2', 'id', 'name', 'transmitter', 'success_rate', 'good_count',
+                'data_count', 'mode'
+        ]:
+            if not self.__getattribute__(attribute_name) == other.__getattribute__(attribute_name):
+                return False
+        return True
