@@ -182,7 +182,7 @@ def main():
     except APIRequestError:
         sys.exit(1)
 
-    if not check_station_availability(ground_station, args.allow_testing):
+    if not args.dryrun and not check_station_availability(ground_station, args.allow_testing):
         sys.exit(1)
 
     # Set minimum culmination elevation
