@@ -90,10 +90,6 @@ class CacheManager:
         - transmitters_receivable (dict(str->dict))
         - tles_all (list(dict))
         """
-        # if not force and not self.update_needed():
-        #     # Cache is valid, skip the update
-        #     return
-
         logging.info('Update satellites, transmitters, transmitter statistics and TLEs:')
         tnow = datetime.now()
 
@@ -102,6 +98,11 @@ class CacheManager:
             self.fetch_transmitters_stats()
             self.fetch_transmitters_receivable()
             self.fetch_tles()
+            self.update_transmitters()
+
+            # Store current time
+            with open(self.last_update_file, "w") as fp_last_update:
+                fp_last_update.write(f'{tnow:%Y-%m-%dT%H:%M:%S}\n')
         else:
             with open(self.satellites_file) as fp_satellites:
                 self.satellites_by_norad_id = json.load(fp_satellites)
@@ -117,12 +118,6 @@ class CacheManager:
             # Read tles
             with open(self.tles_file) as fp_tles:
                 self.tles_all = json.load(fp_tles)
-
-        self.update_transmitters()
-
-        # Store current time
-        with open(self.last_update_file, "w") as fp_last_update:
-            fp_last_update.write(f'{tnow:%Y-%m-%dT%H:%M:%S}\n')
 
     def fetch_transmitters_stats(self):
         logging.info(
