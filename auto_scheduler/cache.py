@@ -84,11 +84,11 @@ class CacheManager:
         data via instance attributes.
 
         Once this method was called, the following instance attributes are available:
-        - satellites_by_norad_id
-        - norad_cat_ids_alive
-        - transmitters_stats
-        - transmitters_receivable
-        - tles_all
+        - satellites_by_norad_id (dict(str -> dict))
+        - norad_cat_ids_alive (list(str))
+        - transmitters_stats (dict(str->dict))
+        - transmitters_receivable (dict(str->dict))
+        - tles_all (list(dict))
         """
         # if not force and not self.update_needed():
         #     # Cache is valid, skip the update
