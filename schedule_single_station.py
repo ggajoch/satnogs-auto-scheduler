@@ -264,6 +264,7 @@ def schedule_single_station(ground_station_id,
                          settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
     cache.update()
 
+    cache.update_transmitters()
     # Filter TLEs for objects of interest only
     tles = list(
         filter(lambda entry: entry['norad_cat_id'] in cache.norad_cat_ids_of_interest,

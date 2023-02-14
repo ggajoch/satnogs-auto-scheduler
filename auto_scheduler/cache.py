@@ -98,7 +98,6 @@ class CacheManager:
             self.fetch_transmitters_stats()
             self.fetch_transmitters_receivable()
             self.fetch_tles()
-            self.update_transmitters()
 
             # Store current time
             with open(self.last_update_file, "w") as fp_last_update:
