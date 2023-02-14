@@ -84,7 +84,7 @@ class CacheManager:
         data via instance attributes.
 
         Once this method was called, the following instance attributes are available:
-        - satellites_by_norad_id (dict(str -> dict))
+        - satellites_by_norad_id (dict(int -> dict))
         - norad_cat_ids_alive (list(str))
         - transmitters_stats (dict(str->dict))
         - transmitters_receivable (dict(str->dict))
@@ -104,8 +104,17 @@ class CacheManager:
             with open(self.last_update_file, "w") as fp_last_update:
                 fp_last_update.write(f'{tnow:%Y-%m-%dT%H:%M:%S}\n')
         else:
+
+            def key2int(dict_object):
+                """
+                Convert all keys to integer
+                """
+                return {int(key): value for key, value in dict_object.items()}
+
             with open(self.satellites_file) as fp_satellites:
                 self.satellites_by_norad_id = json.load(fp_satellites)
+
+            self.satellites_by_norad_id = key2int(self.satellites_by_norad_id)
 
             self.norad_cat_ids_alive = self.satellites_by_norad_id.keys()
 

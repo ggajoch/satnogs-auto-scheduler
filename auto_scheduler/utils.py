@@ -65,7 +65,7 @@ def print_scheduledpass_summary(scheduledpasses,
     printer(f"{' '*128} | misuse | ")
 
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
-        sat_entry = satellites_catalog[str(satpass['satellite']['id'])]
+        sat_entry = satellites_catalog[int(satpass['satellite']['id'])]
 
         printer(f"{ground_station_id:4d} | "
                 f"{'Y' if satpass['scheduled'] else 'N':3s} | "
