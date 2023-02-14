@@ -20,7 +20,7 @@ from auto_scheduler.satnogs_client import APIRequestError, check_station_availab
     get_groundstation_info, get_scheduled_passes_from_network, schedule_observations_batch
 from auto_scheduler.schedulers import ordered_scheduler, report_efficiency
 from auto_scheduler.utils import get_priority_passes, print_scheduledpass_summary, \
-    satellites_from_transmitters
+    satellites_from_transmitters, search_satellites
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
@@ -242,6 +242,30 @@ def main():
                             dryrun)
 
 
+def compare_satellite_lists(satellites_old, satellites_new):
+    """
+    Check two lists of satellites for equality and provide adequate error output if they
+    do not match.
+    """
+    mismatch_found = False
+
+    if not len(satellites_old) == len(satellites_new):
+        print('ERROR: Old and new search method for transmitters yield different number of results'
+              f' ({len(satellites_old)} vs {len(satellites_new)})!')
+        sys.exit(1)
+
+    for satellite_old, satellite_new in zip(satellites_old, satellites_new):
+        if not satellite_old == satellite_new:
+            mismatch_found = True
+            print(satellite_old)
+            print(satellite_new)
+            break
+
+    if mismatch_found:
+        print("ERROR: Mismatch between new and old transmitter search methods found!")
+        sys.exit(1)
+
+
 def schedule_single_station(ground_station_id,
                             wait_time_seconds,
                             min_priority,
@@ -264,6 +288,14 @@ def schedule_single_station(ground_station_id,
                          settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
     cache.update()
 
+    # ---------- New Method ----------
+
+    # Extract interesting satellites from receivable transmitters
+    satellites_new = search_satellites(cache.transmitters_receivable, cache.transmitters_stats,
+                                       cache.tles_all, cache.satellites_by_norad_id,
+                                       settings.MAX_NORAD_CAT_ID, skip_frequency_violators)
+
+    # ---------- Old Method ----------
     cache.update_transmitters()
     # Filter TLEs for objects of interest only
     tles = list(
@@ -274,14 +306,19 @@ def schedule_single_station(ground_station_id,
     transmitters_of_interest = read_transmitters_of_interest(cache.transmitters_file)
 
     # Extract interesting satellites from receivable transmitters
-    satellites = satellites_from_transmitters(transmitters_of_interest, tles)
+    satellites_old = satellites_from_transmitters(transmitters_of_interest, tles)
 
     # Skip satellites with frequency misuse (avoids scheduling permission errors)
     if skip_frequency_violators:
-        satellites = list(
-            filter(
-                lambda sat: not cache.satellites_by_norad_id[str(sat.id)]['is_frequency_violator'],
-                satellites))
+        satellites_old = list(
+            filter(lambda sat: not cache.satellites_by_norad_id[sat.id]['is_frequency_violator'],
+                   satellites_old))
+
+    # ---------- Comparison ----------
+    compare_satellite_lists(satellites_old, satellites_new)
+
+    # Both lists are equal, arbitrarily choose the new list to continue
+    satellites = satellites_new
 
     # Find passes
     constraints = {
