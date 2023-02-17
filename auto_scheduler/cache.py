@@ -111,9 +111,9 @@ class CacheManager:
                 return {int(key): value for key, value in dict_object.items()}
 
             with open(self.satellites_file) as fp_satellites:
-                self.satellites_by_norad_id = json.load(fp_satellites)
+                satellites_by_norad_id_str = json.load(fp_satellites)
 
-            self.satellites_by_norad_id = key2int(self.satellites_by_norad_id)
+            self.satellites_by_norad_id = key2int(satellites_by_norad_id_str)
 
             self.norad_cat_ids_alive = self.satellites_by_norad_id.keys()
 
