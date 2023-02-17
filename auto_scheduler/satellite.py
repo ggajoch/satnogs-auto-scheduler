@@ -59,3 +59,20 @@ class Satellite:
             if not self.__getattribute__(attribute_name) == other.__getattribute__(attribute_name):
                 return False
         return True
+
+    def to_dict(self):
+        return {
+            "tle": {
+                "tle0": self.tle0.strip(),
+                "tle1": self.tle1.strip(),
+                "tle2": self.tle2.strip(),
+                "norad_cat_id": self.id,
+            },
+            "transmitter": {
+                "uuid": self.transmitter,
+                "success_rate": self.success_rate,
+                "good_count": self.good_count,
+                "data_count": self.data_count,
+                "mode": self.mode
+            }
+        }
