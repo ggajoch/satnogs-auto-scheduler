@@ -34,19 +34,8 @@ class Satellite:
 
         Valid Python expression that could be used to recreate the object.
         """
-        return f'auto_scheduler.Satellite(' \
-            'tle={' \
-            f'"tle0": "{self.tle0.strip()}",' \
-            f'"tle1": "{self.tle1.strip()}",' \
-            f'"tle2": "{self.tle2.strip()}",' \
-            f'"norad_cat_id": "{self.id}"' \
-            '}, transmitter={' \
-            f'"uuid": "{self.transmitter}",' \
-            f'"success_rate": "{self.success_rate}",' \
-            f'"good_count": "{self.good_count}",' \
-            f'"data_count": "{self.data_count}",' \
-            f'"mode": "{self.mode}"' \
-            '})'
+        data = self.to_dict()
+        return f'auto_scheduler.Satellite(tle={data["tle"]}, transmitter={data["transmitter"]})'
 
     def __eq__(self, other):
         """
