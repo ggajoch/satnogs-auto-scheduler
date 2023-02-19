@@ -54,7 +54,7 @@ def main(station_id, constrains_file, priorities_file):
         sys.exit()
 
     cache = CacheManager(station_id, ground_station['antenna'], settings.CACHE_DIR,
-                         settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
+                         settings.CACHE_AGE)
     logging.info(f'Last cache update: {cache.last_update()}')
     logging.info(f'Cache update needed: {cache.update_needed()}')
     cache.update()

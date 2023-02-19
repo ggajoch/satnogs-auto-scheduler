@@ -32,7 +32,6 @@ def test_search_satellites():
         satellites_by_norad_id_str = json.load(fp_satellites)
     satellites_by_norad_id = key2int(satellites_by_norad_id_str)
 
-    max_norad_cat_id = 90000
     skip_frequency_violators = True
 
     # Load output data
@@ -40,8 +39,7 @@ def test_search_satellites():
         norad_cat_ids_fixture = set(json.load(fp_output))
 
     satellites = search_satellites(transmitters_receivable, transmitters_stats, tles_all,
-                                   satellites_by_norad_id, max_norad_cat_id,
-                                   skip_frequency_violators)
+                                   satellites_by_norad_id, skip_frequency_violators)
     norad_cat_ids = set(sat.id for sat in satellites)
 
     assert norad_cat_ids == norad_cat_ids_fixture
@@ -61,16 +59,14 @@ def test_search_satellites_online():
         'frequency_max': 446000000
     }]
     cache_age = 24  # hours
-    max_norad_cat_id = 90000
     skip_frequency_violators = True
 
     with tempfile.TemporaryDirectory() as cache_dir:
-        cache = CacheManager(ground_station_id, ground_station_antenna, cache_dir, cache_age,
-                             max_norad_cat_id)
+        cache = CacheManager(ground_station_id, ground_station_antenna, cache_dir, cache_age)
         cache.update()
 
     satellites = search_satellites(cache.transmitters_receivable, cache.transmitters_stats,
-                                   cache.tles_all, cache.satellites_by_norad_id, max_norad_cat_id,
+                                   cache.tles_all, cache.satellites_by_norad_id,
                                    skip_frequency_violators)
 
     for satellite in satellites:

@@ -28,14 +28,12 @@ class CacheManager:
     satellites_by_norad_id = None
     tles_all = None
 
-    def __init__(self, ground_station_id, ground_station_antennas, cache_dir, cache_age,
-                 max_norad_cat_id):
+    def __init__(self, ground_station_id, ground_station_antennas, cache_dir, cache_age):
         # pylint: disable=too-many-arguments
         self.ground_station_id = ground_station_id
         self.ground_station_antennas = ground_station_antennas
         self.cache_dir = cache_dir
         self.cache_age = cache_age
-        self.max_norad_cat_id = max_norad_cat_id
 
         self.transmitters_file = os.path.join(self.cache_dir,
                                               f"transmitters_{self.ground_station_id}.txt")
@@ -223,8 +221,7 @@ class CacheManager:
         self.norad_cat_ids_of_interest = sorted(
             set(transmitter["norad_cat_id"]
                 for transmitter in self.transmitters_receivable.values()
-                if transmitter["norad_cat_id"] < self.max_norad_cat_id
-                and transmitter["norad_cat_id"] in self.norad_cat_ids_alive))
+                if transmitter["norad_cat_id"] in self.norad_cat_ids_alive))
 
         # Store transmitters
         with open(self.transmitters_file, "w") as fp_transmitters:

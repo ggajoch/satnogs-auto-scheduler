@@ -10,7 +10,6 @@ from auto_scheduler.cache import CacheManager
 
 CACHE_DIR = str(Path(gettempdir()))
 CACHE_AGE = 24
-MAX_NORAD_CAT_ID = 90000
 
 GROUND_STATION_ID = 2
 GROUND_STATION_ANTENNA = [{
@@ -29,8 +28,7 @@ def test_cachemanager_force_update():
     """
     logging.basicConfig(level=logging.DEBUG,
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    cache = CacheManager(GROUND_STATION_ID, GROUND_STATION_ANTENNA, CACHE_DIR, CACHE_AGE,
-                         MAX_NORAD_CAT_ID)
+    cache = CacheManager(GROUND_STATION_ID, GROUND_STATION_ANTENNA, CACHE_DIR, CACHE_AGE)
     print(cache.last_update())
     print(cache.update_needed())
 

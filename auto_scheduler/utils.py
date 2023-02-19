@@ -57,7 +57,7 @@ def satellites_from_transmitters(transmitters, tles):
 
 
 def search_satellites(transmitters_receivable, transmitters_stats, tles_all, satellites_by_norad_id,
-                      max_norad_cat_id, skip_frequency_violators):
+                      skip_frequency_violators):
     '''
     Extract satellites of interest based on the list of transmitters of interest
 
@@ -84,8 +84,7 @@ def search_satellites(transmitters_receivable, transmitters_stats, tles_all, sat
     # Extract NORAD IDs from transmitters
     norad_cat_ids_of_interest = sorted(
         set(transmitter["norad_cat_id"] for transmitter in transmitters_receivable.values()
-            if transmitter["norad_cat_id"] < max_norad_cat_id
-            and transmitter["norad_cat_id"] in norad_cat_ids_alive))
+            if transmitter["norad_cat_id"] in norad_cat_ids_alive))
 
     # Filter TLEs for objects of interest only
     tles = list(filter(lambda entry: entry['norad_cat_id'] in norad_cat_ids_of_interest, tles_all))

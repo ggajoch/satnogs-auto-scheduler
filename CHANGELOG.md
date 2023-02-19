@@ -13,6 +13,9 @@
   in SatNOGS for satellites that violate frequency regulations.
 - Removed the deprecated method of fetching TLEs from various sources,
   always fetch TLEs from SatNOGS DB now.
+- Enabled scheduling for satellites with temporary NORAD ID (>90000). This makes it obsolete to filter for
+  satellite with a maximum norad id.
+- Removed the `MAX_NROAD_CAT_ID` setting.
 
 ### Breaking Changes
 

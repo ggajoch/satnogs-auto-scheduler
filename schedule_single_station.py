@@ -285,7 +285,7 @@ def schedule_single_station(ground_station_id,
 
     # Create or update the transmitter & TLE cache
     cache = CacheManager(ground_station_id, ground_station['antenna'], settings.CACHE_DIR,
-                         settings.CACHE_AGE, settings.MAX_NORAD_CAT_ID)
+                         settings.CACHE_AGE)
     cache.update()
 
     # ---------- New Method ----------
@@ -293,7 +293,7 @@ def schedule_single_station(ground_station_id,
     # Extract interesting satellites from receivable transmitters
     satellites_new = search_satellites(cache.transmitters_receivable, cache.transmitters_stats,
                                        cache.tles_all, cache.satellites_by_norad_id,
-                                       settings.MAX_NORAD_CAT_ID, skip_frequency_violators)
+                                       skip_frequency_violators)
 
     # ---------- Old Method ----------
     cache.update_transmitters()
