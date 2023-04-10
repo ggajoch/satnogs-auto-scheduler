@@ -1,15 +1,14 @@
 version: '3.7'
 services:
-  satnogs_auto_scheduler:
+  satnogs-auto-scheduler:
     build:
       context: .
-    image: 'librespace/satnogs-auto-scheduler:latest'
+    image: 'registry.gitlab.com/librespacefoundation/satnogs/satnogs-auto-scheduler/satnogs-auto-scheduler:master'
     user: '999'
-    command: 'schedule_single_station.py --help'
+    command: "schedule_single_station.py --help"
     read_only: true
-      #env_file:
-      # - ./station.env
+    # env_file:
+    #  - ./station.env
     volumes:
       - type: 'tmpfs'
         target: '/tmp'
-
