@@ -169,6 +169,13 @@ class CacheManager:
                       f'{satellite["sat_id"]}  vs '
                       f'{satellites_by_sat_id[norad_to_sat_id[satellite["norad_cat_id"]]]}')
                 continue
+
+            if satellite['norad_cat_id'] is None:
+                print(f'INFO: Skip Satellite {satellite["sat_id"]} with missing NORAD ID '
+                      'since having an assigned or temporary NORAD ID is required for scheduling.')
+                print(satellite)
+                continue
+
             satellites_by_sat_id[satellite['sat_id']] = satellite
             norad_to_sat_id[satellite['norad_cat_id']] = satellite['sat_id']
 
