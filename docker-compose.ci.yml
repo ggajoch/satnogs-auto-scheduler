@@ -1,0 +1,11 @@
+# docker-compose file for building an image in CI
+version: '3.7'
+services:
+  satnogs-auto-scheduler:
+    image: satnogs-auto-scheduler
+    build:
+      context: .
+      cache_from:
+        - $CI_REGISTRY_IMAGE/$IMAGE_NAME:cache
+      cache_to:
+        - $CI_REGISTRY_IMAGE/$IMAGE_NAME:cache
