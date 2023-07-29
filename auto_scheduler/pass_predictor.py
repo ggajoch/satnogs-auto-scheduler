@@ -300,6 +300,39 @@ def constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin,
     return satpass
 
 
+def constrin_pass_to_pointing(satellite,
+                              observer,
+                              satpass,
+                              driftscanradius,
+                              pointing,
+                              num_steps=127,
+                              min_separation=10):
+    # pylint: disable=too-many-arguments
+    # Load TLE
+    try:
+        sat_ephem = ephem.readtle(str(satellite.tle0), str(satellite.tle1), str(satellite.tle2))
+    except (ValueError, AttributeError):
+        return None
+
+    if driftscanradius:
+        ground_az, ground_el = pointing
+        for time_step in [
+                satpass['tr'] + x * (satpass['ts'] - satpass['tr']) / (num_steps - 1)
+                for x in range(num_steps)
+        ]:
+            observer.date = ephem.date(time_step)
+            sat_ephem.compute(observer)
+            separation = ephem.separation((math.radians(ground_az), math.radians(ground_el)),
+                                          (sat_ephem.az, sat_ephem.alt))
+            if separation < min_separation:
+                min_separation = separation
+        logging.debug(f"Driftscan for {sat_ephem.name}, "
+                      f"separation is {math.degrees(min_separation):.1f}")
+        if min_separation > math.radians(driftscanradius):
+            return None
+    return satpass
+
+
 def find_constrained_passes(satellite, observer, constraints):
     """
     Find passes of one satellite over a specified ground station while
@@ -310,6 +343,8 @@ def find_constrained_passes(satellite, observer, constraints):
     - pass duration (min (float), max (float)): Pass duration in minutes
     - azimuth window (start (float), stop (float)): azimuth in degrees; Use (0.0, 360.0) to disable
     - min_culmination (float): Minimum culmination elevation in degrees; Use 0.0 to disable
+    - driftscanradius (float): Drift scan radius in degrees, None to disable
+    - pointing (float, float): Drift scan pointing direction in degrees
 
     # Arguments
     satellite (auto_scheduler.Satellite): The satellite
@@ -321,6 +356,8 @@ def find_constrained_passes(satellite, observer, constraints):
     min_pass_duration, max_pass_duration = constraints['pass_duration']
     start_azimuth, stop_azimuth = constraints['azimuth']
     min_culmination = constraints['min_culmination']
+    driftscanradius = constraints['driftscanradius']
+    pointing = constraints['pointing']
 
     selected_passes = []
     satellite_passes = find_passes(satellite, observer, tmin, tmax, min_culmination,
@@ -335,6 +372,13 @@ def find_constrained_passes(satellite, observer, constraints):
         if not satpass:
             logging.debug("Pass did not meet azimuth window requirements. Removed.")
             continue
+
+        satpass = constrin_pass_to_pointing(satellite, observer, satpass, driftscanradius, pointing)
+
+        if not satpass:
+            logging.debug("Pass did not meet driftscan pointing requirements. Removed.")
+            continue
+
         logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",
                       float(satpass['azr']), float(satpass['azs']))
 

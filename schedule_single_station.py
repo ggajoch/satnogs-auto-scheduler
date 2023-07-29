@@ -90,6 +90,19 @@ def main():
                         "maximum: 360]",
                         type=float,
                         default=360.0)
+    parser.add_argument("-i",
+                        "--driftscanradius",
+                        help="Drift scan mode with radius in degrees",
+                        type=float,
+                        default=None)
+    parser.add_argument("-p",
+                        "--pointing",
+                        help="Pointing direction for drift scan mode "
+                        "[two degrees; azimuth elevation, default: 0 90]",
+                        type=float,
+                        nargs=2,
+                        metavar=("az", "el"),
+                        default=(0, 90))
     parser.add_argument("-f",
                         "--only-priority",
                         help="Schedule only priority satellites (from -P file)",
@@ -235,11 +248,13 @@ def main():
     priorities_filename = args.priorities
     only_priority = args.only_priority
     dryrun = args.dryrun
+    driftscanradius = args.driftscanradius
+    pointing = args.pointing
 
     schedule_single_station(ground_station_id, wait_time_seconds, min_priority, tmax, tmin,
                             ground_station, min_culmination, min_riseset, start_azimuth,
                             stop_azimuth, max_pass_duration, priorities_filename, only_priority,
-                            dryrun)
+                            dryrun, driftscanradius, pointing)
 
 
 def compare_satellite_lists(satellites_old, satellites_new):
@@ -280,6 +295,8 @@ def schedule_single_station(ground_station_id,
                             priorities_filename,
                             only_priority,
                             dryrun,
+                            driftscanradius,
+                            pointing,
                             skip_frequency_violators=True):
     # pylint: disable=too-many-arguments,too-many-locals
 
@@ -326,6 +343,8 @@ def schedule_single_station(ground_station_id,
         'pass_duration': (settings.MIN_PASS_DURATION, max_pass_duration),
         'azimuth': (start_azimuth, stop_azimuth),
         'min_culmination': min_culmination,
+        'driftscanradius': driftscanradius,
+        'pointing': pointing,
     }
     logging.info(f'Search passes for {len(satellites)} satellites:')
 
