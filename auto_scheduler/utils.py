@@ -135,9 +135,10 @@ def print_scheduledpass_summary(scheduledpasses,
                                 ground_station_id,
                                 satellites_catalog,
                                 printer=print):
-    printer("  GS | Sch | NORAD | Start time          | End time            | Duration |  El | " +
-            "Priority | Transmitter UUID       | Mode       | Freq   | Satellite name")
-    printer(f"{' '*128} | misuse | ")
+    printer(
+        "  GS | Sch | NORAD | Start time          | End time            | Duration | AzR El AzS | "
+        + "Priority | Transmitter UUID       | Mode        | Freq   | Satellite name")
+    printer(f"{' '*136} | misuse | ")
 
     for satpass in sorted(scheduledpasses, key=lambda satpass: satpass['tr']):
         sat_entry = satellites_catalog[int(satpass['satellite']['id'])]
@@ -147,8 +148,10 @@ def print_scheduledpass_summary(scheduledpasses,
                 f"{int(satpass['satellite']['id']):05d} | "
                 f"{satpass['tr'].strftime('%Y-%m-%dT%H:%M:%S'):s} | "
                 f"{satpass['ts'].strftime('%Y-%m-%dT%H:%M:%S'):s} | "
-                f"{str(satpass['td']).split('.', maxsplit=1)[0]:s} | "
-                f"{float(satpass['altt']) if satpass['altt'] else 0.:3.0f} | "
+                f"{str(satpass['td']).split('.', maxsplit=1)[0]:>8} | "
+                f"{float(satpass['azr']) if satpass['azr'] else 0.:3.0f} "
+                f"{float(satpass['altt']) if satpass['altt'] else 0.:2.0f} "
+                f"{float(satpass['azs']) if satpass['azs'] else 0.:3.0f} | "
                 f"{satpass.get('priority', 0.0):4.6f} | "
                 f"{satpass['transmitter'].get('uuid', ''):s} | "
                 f"{satpass['transmitter'].get('mode', ''):<11s} | "
