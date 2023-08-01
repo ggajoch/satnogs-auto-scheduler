@@ -300,35 +300,40 @@ def constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin,
     return satpass
 
 
-def constrin_pass_to_pointing(satellite,
-                              observer,
-                              satpass,
-                              driftscanradius,
-                              pointing,
-                              num_steps=127,
-                              min_separation=10):
-    # pylint: disable=too-many-arguments
+def constrain_pass_to_angular_separation(satellite, observer, satpass, angular_separation):
+    """
+    Determines whether a given observation passes within max-separation of the antenna direction.
+    :param satellite: Satellite object the satpass is for.
+    :param satpass: Satpass to be adjusted to fit within the recording duration.
+    :param observer: Observer.
+    :param angular_separation: list of max_separation, pointing_az, pointing_el
+    :return: The satpass object that satisfies the pointing constraint, or None.
+    """
+    # Un-pack arguments
+    max_separation, pointing_az, pointing_el = angular_separation
+
     # Load TLE
     try:
         sat_ephem = ephem.readtle(str(satellite.tle0), str(satellite.tle1), str(satellite.tle2))
     except (ValueError, AttributeError):
         return None
 
-    if driftscanradius:
-        ground_az, ground_el = pointing
+    num_steps = 127
+    min_separation = 10  # >2*pi, cover entire sky
+    if max_separation:
         for time_step in [
                 satpass['tr'] + x * (satpass['ts'] - satpass['tr']) / (num_steps - 1)
                 for x in range(num_steps)
         ]:
             observer.date = ephem.date(time_step)
             sat_ephem.compute(observer)
-            separation = ephem.separation((math.radians(ground_az), math.radians(ground_el)),
+            separation = ephem.separation((math.radians(pointing_az), math.radians(pointing_el)),
                                           (sat_ephem.az, sat_ephem.alt))
             if separation < min_separation:
                 min_separation = separation
-        logging.debug(f"Driftscan for {sat_ephem.name}, "
-                      f"separation is {math.degrees(min_separation):.1f}")
-        if min_separation > math.radians(driftscanradius):
+        logging.debug(
+            f"Angular separation for {sat_ephem.name} is {math.degrees(min_separation):.1f}")
+        if min_separation > math.radians(max_separation):
             return None
     return satpass
 
@@ -343,8 +348,8 @@ def find_constrained_passes(satellite, observer, constraints):
     - pass duration (min (float), max (float)): Pass duration in minutes
     - azimuth window (start (float), stop (float)): azimuth in degrees; Use (0.0, 360.0) to disable
     - min_culmination (float): Minimum culmination elevation in degrees; Use 0.0 to disable
-    - driftscanradius (float): Drift scan radius in degrees, None to disable
-    - pointing (float, float): Drift scan pointing direction in degrees
+    - angular_separation (max_separation (float), pointing_az (float), pointing_el (float)):
+      Maximum angular separation; use max_separation as None to disable
 
     # Arguments
     satellite (auto_scheduler.Satellite): The satellite
@@ -356,8 +361,7 @@ def find_constrained_passes(satellite, observer, constraints):
     min_pass_duration, max_pass_duration = constraints['pass_duration']
     start_azimuth, stop_azimuth = constraints['azimuth']
     min_culmination = constraints['min_culmination']
-    driftscanradius = constraints['driftscanradius']
-    pointing = constraints['pointing']
+    angular_separation = constraints['angular_separation']
 
     selected_passes = []
     satellite_passes = find_passes(satellite, observer, tmin, tmax, min_culmination,
@@ -373,10 +377,11 @@ def find_constrained_passes(satellite, observer, constraints):
             logging.debug("Pass did not meet azimuth window requirements. Removed.")
             continue
 
-        satpass = constrin_pass_to_pointing(satellite, observer, satpass, driftscanradius, pointing)
+        satpass = constrain_pass_to_angular_separation(satellite, observer, satpass,
+                                                       angular_separation)
 
         if not satpass:
-            logging.debug("Pass did not meet driftscan pointing requirements. Removed.")
+            logging.debug("Pass did not meet max angular separation requirements. Removed.")
             continue
 
         logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",

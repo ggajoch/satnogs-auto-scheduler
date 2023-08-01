@@ -91,17 +91,18 @@ def main():
                         type=float,
                         default=360.0)
     parser.add_argument("-i",
-                        "--driftscanradius",
-                        help="Drift scan mode with radius in degrees",
+                        "--max-separation",
+                        help="Constrain passes to maximum angular separation. "
+                        "[degrees; default: None]",
                         type=float,
                         default=None)
     parser.add_argument("-p",
                         "--pointing",
-                        help="Pointing direction for drift scan mode "
-                        "[two degrees; azimuth elevation, default: 0 90]",
+                        help="Antenna pointing direction for angular separation. "
+                        "[degrees; azimuth elevation, default: 0 90]",
                         type=float,
                         nargs=2,
-                        metavar=("az", "el"),
+                        metavar=("ANT_AZ", "ANT_EL"),
                         default=(0, 90))
     parser.add_argument("-f",
                         "--only-priority",
@@ -244,17 +245,20 @@ def main():
     else:
         stop_azimuth = args.stop_azimuth
 
+    # Set max angular separation
+    max_separation = args.max_separation
+    pointing_az, pointing_el = args.pointing
+    angular_separation = max_separation, pointing_az, pointing_el
+
     max_pass_duration = args.max_observation_duration
     priorities_filename = args.priorities
     only_priority = args.only_priority
     dryrun = args.dryrun
-    driftscanradius = args.driftscanradius
-    pointing = args.pointing
 
     schedule_single_station(ground_station_id, wait_time_seconds, min_priority, tmax, tmin,
                             ground_station, min_culmination, min_riseset, start_azimuth,
                             stop_azimuth, max_pass_duration, priorities_filename, only_priority,
-                            dryrun, driftscanradius, pointing)
+                            dryrun, angular_separation)
 
 
 def compare_satellite_lists(satellites_old, satellites_new):
@@ -295,8 +299,7 @@ def schedule_single_station(ground_station_id,
                             priorities_filename,
                             only_priority,
                             dryrun,
-                            driftscanradius,
-                            pointing,
+                            angular_separation,
                             skip_frequency_violators=True):
     # pylint: disable=too-many-arguments,too-many-locals
 
@@ -343,8 +346,7 @@ def schedule_single_station(ground_station_id,
         'pass_duration': (settings.MIN_PASS_DURATION, max_pass_duration),
         'azimuth': (start_azimuth, stop_azimuth),
         'min_culmination': min_culmination,
-        'driftscanradius': driftscanradius,
-        'pointing': pointing,
+        'angular_separation': angular_separation,
     }
     logging.info(f'Search passes for {len(satellites)} satellites:')
 
