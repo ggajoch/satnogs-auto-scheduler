@@ -320,21 +320,19 @@ def constrain_pass_to_angular_separation(satellite, observer, satpass, angular_s
 
     num_steps = 127
     min_separation = 10  # >2*pi, cover entire sky
-    if max_separation:
-        for time_step in [
-                satpass['tr'] + x * (satpass['ts'] - satpass['tr']) / (num_steps - 1)
-                for x in range(num_steps)
-        ]:
-            observer.date = ephem.date(time_step)
-            sat_ephem.compute(observer)
-            separation = ephem.separation((math.radians(pointing_az), math.radians(pointing_el)),
-                                          (sat_ephem.az, sat_ephem.alt))
-            if separation < min_separation:
-                min_separation = separation
-        logging.debug(
-            f"Angular separation for {sat_ephem.name} is {math.degrees(min_separation):.1f}")
-        if min_separation > math.radians(max_separation):
-            return None
+    for time_step in [
+            satpass['tr'] + x * (satpass['ts'] - satpass['tr']) / (num_steps - 1)
+            for x in range(num_steps)
+    ]:
+        observer.date = ephem.date(time_step)
+        sat_ephem.compute(observer)
+        separation = ephem.separation((math.radians(pointing_az), math.radians(pointing_el)),
+                                      (sat_ephem.az, sat_ephem.alt))
+        if separation < min_separation:
+            min_separation = separation
+    logging.debug(f"Angular separation for {sat_ephem.name} is {math.degrees(min_separation):.1f}")
+    if min_separation > math.radians(max_separation):
+        return None
     return satpass
 
 
@@ -377,12 +375,12 @@ def find_constrained_passes(satellite, observer, constraints):
             logging.debug("Pass did not meet azimuth window requirements. Removed.")
             continue
 
-        satpass = constrain_pass_to_angular_separation(satellite, observer, satpass,
-                                                       angular_separation)
-
-        if not satpass:
-            logging.debug("Pass did not meet max angular separation requirements. Removed.")
-            continue
+        if angular_separation[0]:
+            satpass = constrain_pass_to_angular_separation(satellite, observer, satpass,
+                                                           angular_separation)
+            if not satpass:
+                logging.debug("Pass did not meet max angular separation requirements. Removed.")
+                continue
 
         logging.debug("Adjusted pass inside azimuth window is azr %f and azs %f",
                       float(satpass['azr']), float(satpass['azs']))
