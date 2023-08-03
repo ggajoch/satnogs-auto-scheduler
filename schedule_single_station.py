@@ -38,7 +38,7 @@ def _log_level_string_to_int(log_level_string):
     return log_level_int
 
 
-def main():
+def main():  # noqa: C901
     # pylint: disable=too-many-branches,too-many-statements,too-many-locals
 
     # Parse arguments
@@ -91,19 +91,15 @@ def main():
                         type=float,
                         default=360.0)
     parser.add_argument("-i",
-                        "--max-separation",
-                        help="Constrain passes to maximum angular separation. "
-                        "[degrees; default: None]",
-                        type=float,
-                        default=None)
-    parser.add_argument("-p",
                         "--pointing",
-                        help="Antenna pointing direction for angular separation. "
-                        "[degrees; azimuth elevation, default: 0 90]",
-                        type=float,
-                        nargs=2,
-                        metavar=("ANT_AZ", "ANT_EL"),
-                        default=(0, 90))
+                        help="Constrain passes to antenna beam radius "
+                        "(half beamwidth) and pointing direction. "
+                        "Examples: antenna pointing straight up, 30 degree radius: '-i 30', "
+                        "pointing south at horizon: '-i 30 180', "
+                        "pointing west and 45 degrees up: '-i 30 270 45'. "
+                        "[degrees; default: None]",
+                        nargs='*',
+                        type=float)
     parser.add_argument("-f",
                         "--only-priority",
                         help="Schedule only priority satellites (from -P file)",
@@ -245,9 +241,35 @@ def main():
     else:
         stop_azimuth = args.stop_azimuth
 
-    # Set max angular separation
-    max_separation = args.max_separation
-    pointing_az, pointing_el = args.pointing
+    # Set antenna pointing and max angular separation
+    max_separation, pointing_az, pointing_el = None, 0.0, 90.0
+    if args.pointing:
+        if len(args.pointing) >= 1:  # antenna pointing straight up
+            max_separation = args.pointing[0]
+        if len(args.pointing) == 2:  # antenna pointing along horizon
+            pointing_az = args.pointing[1]
+            pointing_el = 0.0
+        elif len(args.pointing) >= 3:  # antenna pointing az/el
+            pointing_az = args.pointing[1]
+            pointing_el = args.pointing[2]
+        if len(args.pointing) > 3:
+            logging.warning("Extra args in --pointing, ignored.")
+        if pointing_az < 0.0:
+            logging.warning(
+                "Azimuth angle not in the range [0, 360] degrees. Setting to 0 degrees.")
+            pointing_az = 0.0
+        elif pointing_az > 360.0:
+            logging.warning(
+                "Azimuth angle not in the range [0, 360] degrees. Setting to 360 degrees.")
+            pointing_az = 360.0
+        if pointing_el < 0.0:
+            logging.warning(
+                "Elevation angle not in the range [0, 90] degrees. Setting to 0 degrees.")
+            pointing_el = 0.0
+        elif pointing_el > 90.0:
+            logging.warning(
+                "Elevation angle not in the range [0, 90] degrees. Setting to 90 degrees.")
+            pointing_el = 90.0
     angular_separation = max_separation, pointing_az, pointing_el
 
     max_pass_duration = args.max_observation_duration
