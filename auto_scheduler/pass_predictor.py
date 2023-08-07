@@ -300,15 +300,19 @@ def constrain_pass_to_max_observation_duration(satpass, max_pass_duration, tmin,
     return satpass
 
 
-def constrain_pass_to_angular_separation(satellite, observer, satpass, angular_separation):
+def constrain_pass_to_angular_separation(satellite, observer, satpass, angular_separation,
+                                         min_pass_duration):
     """
     Determines whether a given observation passes within max-separation of the antenna direction.
     :param satellite: Satellite object the satpass is for.
     :param satpass: Satpass to be adjusted to fit within the recording duration.
     :param observer: Observer.
     :param angular_separation: list of max_separation, pointing_az, pointing_el
+    :param min_pass_duration: Minimum pass duration in minutes. Extend pass beyond
+    angular_separation to keep the pass at least min_pass_dustaion long.
     :return: The satpass object that satisfies the pointing constraint, or None.
     """
+    # pylint: disable=too-many-locals
     # Un-pack arguments
     max_separation, pointing_az, pointing_el = angular_separation
 
@@ -320,6 +324,7 @@ def constrain_pass_to_angular_separation(satellite, observer, satpass, angular_s
 
     num_steps = 127
     min_separation = 10  # >2*pi, cover entire sky
+    ts_raise = ts_set = ts_closest = None
     for time_step in [
             satpass['tr'] + x * (satpass['ts'] - satpass['tr']) / (num_steps - 1)
             for x in range(num_steps)
@@ -330,9 +335,32 @@ def constrain_pass_to_angular_separation(satellite, observer, satpass, angular_s
                                       (sat_ephem.az, sat_ephem.alt))
         if separation < min_separation:
             min_separation = separation
+            ts_closest = time_step
+        if separation < math.radians(max_separation):
+            if ts_raise is None:
+                ts_raise = time_step
+            ts_set = time_step
     logging.debug(f"Angular separation for {sat_ephem.name} is {math.degrees(min_separation):.1f}")
     if min_separation > math.radians(max_separation):
         return None
+
+    # Try to trim down pass to fit within max_separation and min_duration
+    min_duration = timedelta(minutes=min_pass_duration)
+    half_duration = min_duration / 2
+
+    if ts_set - ts_raise > min_duration:
+        satpass['tr'] = ts_raise
+        satpass['ts'] = ts_set
+    elif (ts_closest - half_duration >= satpass['tr']
+          and ts_closest + half_duration <= satpass['ts']):
+        satpass['tr'] = ts_closest - half_duration
+        satpass['ts'] = ts_closest + half_duration
+    elif satpass['tr'] >= ts_closest - half_duration:
+        satpass['ts'] = satpass['tr'] + min_duration
+    elif satpass['ts'] <= ts_closest + half_duration:
+        satpass['tr'] = satpass['ts'] - min_duration
+    satpass['td'] = satpass['ts'] - satpass['tr']
+
     return satpass
 
 
@@ -377,7 +405,7 @@ def find_constrained_passes(satellite, observer, constraints):
 
         if angular_separation[0]:
             satpass = constrain_pass_to_angular_separation(satellite, observer, satpass,
-                                                           angular_separation)
+                                                           angular_separation, min_pass_duration)
             if not satpass:
                 logging.debug("Pass did not meet max angular separation requirements. Removed.")
                 continue
