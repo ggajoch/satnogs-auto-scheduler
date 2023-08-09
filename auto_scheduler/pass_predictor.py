@@ -324,7 +324,8 @@ def constrain_pass_to_angular_separation(satellite, observer, satpass, angular_s
 
     num_steps = 127
     min_separation = 10  # >2*pi, cover entire sky
-    ts_raise = ts_set = ts_closest = None
+    ts_rise = ts_set = ts_closest = None
+    max_alt = ephem.degrees(0)
     for time_step in [
             satpass['tr'] + x * (satpass['ts'] - satpass['tr']) / (num_steps - 1)
             for x in range(num_steps)
@@ -336,9 +337,10 @@ def constrain_pass_to_angular_separation(satellite, observer, satpass, angular_s
         if separation < min_separation:
             min_separation = separation
             ts_closest = time_step
+            max_alt = max(max_alt, sat_ephem.alt)
         if separation < math.radians(max_separation):
-            if ts_raise is None:
-                ts_raise = time_step
+            if ts_rise is None:
+                ts_rise = time_step
             ts_set = time_step
     logging.debug(f"Angular separation for {sat_ephem.name} is {math.degrees(min_separation):.1f}")
     if min_separation > math.radians(max_separation):
@@ -348,8 +350,8 @@ def constrain_pass_to_angular_separation(satellite, observer, satpass, angular_s
     min_duration = timedelta(minutes=min_pass_duration)
     half_duration = min_duration / 2
 
-    if ts_set - ts_raise > min_duration:
-        satpass['tr'] = ts_raise
+    if ts_set - ts_rise > min_duration:
+        satpass['tr'] = ts_rise
         satpass['ts'] = ts_set
     elif (ts_closest - half_duration >= satpass['tr']
           and ts_closest + half_duration <= satpass['ts']):
@@ -361,6 +363,13 @@ def constrain_pass_to_angular_separation(satellite, observer, satpass, angular_s
         satpass['tr'] = satpass['ts'] - min_duration
     satpass['td'] = satpass['ts'] - satpass['tr']
 
+    observer.date = ephem.date(satpass['tr'])
+    sat_ephem.compute(observer)
+    satpass['azr'] = format(math.degrees(sat_ephem.az), '.0f')
+    observer.date = ephem.date(satpass['ts'])
+    sat_ephem.compute(observer)
+    satpass['azs'] = format(math.degrees(sat_ephem.az), '.0f')
+    satpass['altt'] = format(math.degrees(max_alt), '.0f')
     return satpass
 
 
