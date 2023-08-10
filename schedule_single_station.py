@@ -136,6 +136,11 @@ def main():  # noqa: C901
         help="Allow scheduling on stations which are in testing mode [default: False]",
         action="store_true")
     parser.set_defaults(allow_testing=False)
+    parser.add_argument(
+        "--flush-cache",
+        help="Clean the cache and download current transmitters, satellites and TLE.",
+        action="store_true",
+        default=False)
     parser.add_argument("-l",
                         "--log-level",
                         default="INFO",
@@ -276,11 +281,12 @@ def main():  # noqa: C901
     priorities_filename = args.priorities
     only_priority = args.only_priority
     dryrun = args.dryrun
+    flush_cache = args.flush_cache
 
     schedule_single_station(ground_station_id, wait_time_seconds, min_priority, tmax, tmin,
                             ground_station, min_culmination, min_riseset, start_azimuth,
                             stop_azimuth, max_pass_duration, priorities_filename, only_priority,
-                            dryrun, angular_separation)
+                            dryrun, angular_separation, flush_cache)
 
 
 def compare_satellite_lists(satellites_old, satellites_new):
@@ -322,12 +328,15 @@ def schedule_single_station(ground_station_id,
                             only_priority,
                             dryrun,
                             angular_separation,
+                            flush_cache,
                             skip_frequency_violators=True):
     # pylint: disable=too-many-arguments,too-many-locals
 
     # Create or update the transmitter & TLE cache
     cache = CacheManager(ground_station_id, ground_station['antenna'], settings.CACHE_DIR,
                          settings.CACHE_AGE)
+    if flush_cache:
+        cache.flush_cache()
     cache.update()
 
     # ---------- New Method ----------

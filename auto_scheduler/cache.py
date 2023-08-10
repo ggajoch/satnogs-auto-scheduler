@@ -278,3 +278,21 @@ class CacheManager:
 
         with open(self.tles_file, "w") as fp_tles:
             json.dump(self.tles_all, fp_tles, indent=2)
+
+    def flush_cache(self):
+        """
+        Flush the cache so a current set of transmitters, satellites and TLE can be downloaded.
+        """
+        logging.info('Flushing cache.')
+        cache = [
+            self.transmitters_file,
+            self.transmitters2_file,
+            self.last_update_file,
+            self.tles_file,
+            self.transmitters_stats_file,
+            self.satellites_file,
+            self.satellites2_file,
+        ]
+        for cachefile in cache:
+            if os.path.exists(cachefile):
+                os.remove(cachefile)
