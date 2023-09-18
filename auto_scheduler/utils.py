@@ -57,7 +57,7 @@ def satellites_from_transmitters(transmitters, tles):
 
 
 def search_satellites(transmitters_receivable, transmitters_stats, tles_all, satellites_by_norad_id,
-                      skip_frequency_violators):
+                      skip_frequency_violators, min_success_rate):
     '''
     Extract satellites of interest based on the list of transmitters of interest
 
@@ -102,13 +102,17 @@ def search_satellites(transmitters_receivable, transmitters_stats, tles_all, sat
         if transmitters_receivable[uuid]["norad_cat_id"] not in norad_cat_ids_alive:
             continue
 
+        success_rate = stats["success_rate"] / 100.0
+        if success_rate < min_success_rate:
+            continue
+
         transmitters_of_interest.append({
             "norad_cat_id":
             transmitters_receivable[uuid]["norad_cat_id"],
             "uuid":
             uuid,
             "success_rate":
-            stats["success_rate"] / 100.0,
+            success_rate,
             "good_count":
             stats["good_count"],
             "data_count":

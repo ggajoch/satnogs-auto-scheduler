@@ -130,6 +130,12 @@ def main():  # noqa: C901
                         "than this limit [default: 0.0, maximum: 1.0]",
                         type=float,
                         default=0.)
+    parser.add_argument("-s",
+                        "--min-success-rate",
+                        help="Minimum success rate. Only schedule satellites with a success rate higher" +
+                        "than this limit [default: 0.0, maximum: 1.0]",
+                        type=float,
+                        default=0.)
     parser.add_argument(
         "-T",
         "--allow-testing",
@@ -185,6 +191,13 @@ def main():  # noqa: C901
         min_priority = 1.0
     else:
         min_priority = args.min_priority
+
+    if args.min_success_rate < 0.0:
+        min_success_rate = 0.0
+    elif args.min_success_rate > 1.0:
+        min_success_rate = 1.0
+    else:
+        min_success_rate = args.min_success_rate
 
     # Set time range
     tnow = datetime.strptime(args.starttime, "%Y-%m-%dT%H:%M:%S")
@@ -286,7 +299,7 @@ def main():  # noqa: C901
     schedule_single_station(ground_station_id, wait_time_seconds, min_priority, tmax, tmin,
                             ground_station, min_culmination, min_riseset, start_azimuth,
                             stop_azimuth, max_pass_duration, priorities_filename, only_priority,
-                            dryrun, angular_separation, flush_cache)
+                            dryrun, angular_separation, flush_cache, min_success_rate)
 
 
 def compare_satellite_lists(satellites_old, satellites_new):
@@ -328,6 +341,7 @@ def schedule_single_station(ground_station_id,
                             only_priority,
                             dryrun,
                             angular_separation,
+                            min_success_rate,
                             flush_cache,
                             skip_frequency_violators=True):
     # pylint: disable=too-many-arguments,too-many-locals
@@ -344,7 +358,7 @@ def schedule_single_station(ground_station_id,
     # Extract interesting satellites from receivable transmitters
     satellites_new = search_satellites(cache.transmitters_receivable, cache.transmitters_stats,
                                        cache.tles_all, cache.satellites_by_norad_id,
-                                       skip_frequency_violators)
+                                       skip_frequency_violators, min_success_rate)
 
     # ---------- Old Method ----------
     cache.update_transmitters()
